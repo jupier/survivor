@@ -516,7 +516,7 @@ export class Game {
       ]);
 
       // Option text
-      const optionText = this.k.add([
+      this.k.add([
         this.k.text(option.text, { size: 20 }),
         this.k.color(
           isEnabled ? 255 : 150,
