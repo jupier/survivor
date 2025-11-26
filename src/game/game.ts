@@ -39,6 +39,7 @@ export class Game {
     const enemySize = 32; // size of enemy sprite (32x32)
     let targetingZoneRadius = 150; // Configurable targeting zone radius (mutable for upgrades)
     let projectileCount = 1; // Number of projectiles fired at once (mutable for upgrades)
+    let projectileBounces = 0; // Number of bounces projectiles can make (mutable for upgrades)
 
     // Enemy scaling
     let enemySpawnController: any = null; // Controller for normal enemy spawn loop
@@ -293,6 +294,18 @@ export class Game {
       this.k.fixed(),
       this.k.z(110),
     ]);
+    statsY += 20;
+
+    // Projectile bounces stat
+    const bounceStatText = this.k.add([
+      this.k.text(`Bounces: ${projectileBounces}`, { size: 14 }),
+      this.k.color(200, 200, 200),
+      this.k.pos(statsX, statsY),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(110),
+    ]);
+    statsY += 20;
 
     // Spawn normal enemies periodically (always active)
     enemySpawnController = this.k.loop(enemySpawnInterval, () => {
@@ -350,7 +363,8 @@ export class Game {
         this.autoFireAtClosestEnemy(
           player,
           targetingZoneRadius,
-          projectileCount
+          projectileCount,
+          projectileBounces
         );
       }
     });
@@ -517,6 +531,7 @@ export class Game {
       projectileStatText.text = `Projectiles: ${projectileCount}`;
       zoneStatText.text = `Range: ${targetingZoneRadius}`;
       fireRateStatText.text = `Fire Rate: ${(1 / fireInterval).toFixed(1)}/s`;
+      bounceStatText.text = `Bounces: ${projectileBounces}`;
     });
 
     // Handle player collision with enemies
@@ -591,7 +606,8 @@ export class Game {
                   this.autoFireAtClosestEnemy(
                     player,
                     targetingZoneRadius,
-                    projectileCount
+                    projectileCount,
+                    projectileBounces
                   );
                 }
               });
@@ -604,6 +620,9 @@ export class Game {
             } else if (option === "targetingZone") {
               // Increase targeting zone radius
               targetingZoneRadius = Math.round(targetingZoneRadius * 1.3); // 30% larger
+            } else if (option === "projectileBounces") {
+              // Increase projectile bounces
+              projectileBounces += 1;
             }
           }
         );
@@ -637,7 +656,7 @@ export class Game {
 
     // Menu background
     const menuWidth = 400;
-    const menuHeight = 300; // Back to original size for 4 options
+    const menuHeight = 350; // Increased for 5 options
     const menuX = (this.k.width() - menuWidth) / 2;
     const menuY = (this.k.height() - menuHeight) / 2;
 
@@ -668,6 +687,7 @@ export class Game {
       { id: "projectileCount", text: "Increase Projectile Count" },
       { id: "movementSpeed", text: "Increase Movement Speed" },
       { id: "targetingZone", text: "Increase Targeting Range" },
+      { id: "projectileBounces", text: "Add Projectile Bounce" },
     ];
 
     const optionHeight = 50;
@@ -897,7 +917,8 @@ export class Game {
   private autoFireAtClosestEnemy(
     player: any,
     zoneRadius: number,
-    projectileCount: number
+    projectileCount: number,
+    projectileBounces: number
   ): void {
     // Find all enemies
     const enemies = this.k.get("enemy");
@@ -938,7 +959,12 @@ export class Game {
         const directionY = dy / distance;
 
         // Fire one projectile at this enemy
-        this.fireProjectile(player.pos, directionX, directionY);
+        this.fireProjectile(
+          player.pos,
+          directionX,
+          directionY,
+          projectileBounces
+        );
       }
     }
   }
@@ -946,7 +972,8 @@ export class Game {
   private fireProjectile(
     startPos: { x: number; y: number },
     directionX: number,
-    directionY: number
+    directionY: number,
+    bouncesRemaining: number = 0
   ): void {
     const projectileSpeed = 300; // pixels per second
     const projectileSize = 8;
@@ -964,16 +991,27 @@ export class Game {
       "projectile",
     ]);
 
+    // Store bounce count on projectile
+    (projectile as any).bouncesRemaining = bouncesRemaining;
+    (projectile as any).directionX = directionX;
+    (projectile as any).directionY = directionY;
+    (projectile as any).hitEnemies = new Set(); // Track enemies already hit to avoid bouncing to same enemy
+
     // Handle collision with enemies
     projectile.onCollide("enemy", (enemy) => {
+      // Skip if we've already hit this enemy (prevents multiple hits)
+      if ((projectile as any).hitEnemies.has(enemy)) {
+        return;
+      }
+
+      // Mark this enemy as hit
+      (projectile as any).hitEnemies.add(enemy);
+
       // Reduce enemy health
       if (!(enemy as any).health) {
         (enemy as any).health = 1;
       }
       (enemy as any).health -= 1;
-
-      // Destroy projectile
-      projectile.destroy();
 
       // Check if enemy is dead
       if ((enemy as any).health <= 0) {
@@ -991,17 +1029,74 @@ export class Game {
         // Destroy the enemy
         enemy.destroy();
       }
+
+      // Check if projectile should bounce
+      if ((projectile as any).bouncesRemaining > 0) {
+        // Find nearest enemy that hasn't been hit
+        const allEnemies = this.k.get("enemy");
+        let nearestEnemy: any = null;
+        let nearestDistance = Infinity;
+
+        for (const otherEnemy of allEnemies) {
+          // Skip if already hit or if it's the same enemy
+          if (
+            (projectile as any).hitEnemies.has(otherEnemy) ||
+            otherEnemy === enemy
+          ) {
+            continue;
+          }
+
+          const dx = otherEnemy.pos.x - projectile.pos.x;
+          const dy = otherEnemy.pos.y - projectile.pos.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestEnemy = otherEnemy;
+          }
+        }
+
+        // If we found a target, bounce to it
+        if (nearestEnemy) {
+          const dx = nearestEnemy.pos.x - projectile.pos.x;
+          const dy = nearestEnemy.pos.y - projectile.pos.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance > 0) {
+            const newDirectionX = dx / distance;
+            const newDirectionY = dy / distance;
+            const newAngle =
+              Math.atan2(newDirectionY, newDirectionX) * (180 / Math.PI);
+
+            // Update projectile direction and rotation
+            (projectile as any).directionX = newDirectionX;
+            (projectile as any).directionY = newDirectionY;
+            (projectile as any).bouncesRemaining -= 1;
+            projectile.angle = newAngle;
+          }
+        } else {
+          // No more enemies to bounce to, destroy projectile
+          projectile.destroy();
+        }
+      } else {
+        // No bounces remaining, destroy projectile
+        projectile.destroy();
+      }
     });
 
-    // Move projectile in the direction the player is facing
+    // Move projectile in the direction it's traveling
     projectile.onUpdate(() => {
       // Don't update if game is paused
       if (this.isPaused) {
         return;
       }
 
-      projectile.pos.x += directionX * projectileSpeed * this.k.dt();
-      projectile.pos.y += directionY * projectileSpeed * this.k.dt();
+      // Use stored direction (may change on bounce)
+      const currentDirX = (projectile as any).directionX || directionX;
+      const currentDirY = (projectile as any).directionY || directionY;
+
+      projectile.pos.x += currentDirX * projectileSpeed * this.k.dt();
+      projectile.pos.y += currentDirY * projectileSpeed * this.k.dt();
 
       // Remove projectile when it goes off screen
       if (
