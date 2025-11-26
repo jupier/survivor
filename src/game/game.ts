@@ -1,5 +1,14 @@
 import kaplay from "kaplay";
 import { createPlayerSprite } from "../assets/create-player-sprite";
+import {
+  createNormalEnemySprite,
+  createStrongEnemySprite,
+} from "../assets/create-enemy-sprites";
+import { createBackgroundPattern } from "../assets/create-background-sprite";
+import { createXPSprite } from "../assets/create-xp-sprite";
+import { createHealthSprite } from "../assets/create-health-sprite";
+import { createProjectileSprite } from "../assets/create-projectile-sprite";
+import { createTargetingZoneSprite } from "../assets/create-targeting-zone-sprite";
 
 export class Game {
   private k: ReturnType<typeof kaplay>;
@@ -15,7 +24,7 @@ export class Game {
       width,
       height,
       root: container,
-      background: [42, 42, 42],
+      background: [42, 42, 52], // Slightly darker blue-gray to match moon theme
     });
 
     this.setupGame();
@@ -26,7 +35,7 @@ export class Game {
     let fireInterval = 1; // seconds (mutable for upgrades) - faster for auto-targeting
     let enemySpawnInterval = 1; // seconds (mutable - increases every 15 seconds)
     const enemySpeed = 100; // pixels per second
-    const enemySize = 16; // size of enemy square
+    const enemySize = 32; // size of enemy sprite (32x32)
     let targetingZoneRadius = 150; // Configurable targeting zone radius (mutable for upgrades)
     let projectileCount = 1; // Number of projectiles fired at once (mutable for upgrades)
 
@@ -55,6 +64,44 @@ export class Game {
         "walk-right": { from: 10, to: 11, loop: true, speed: 8 },
       },
     });
+
+    // Create and load enemy sprites
+    const normalEnemySpriteUrl = createNormalEnemySprite();
+    await this.k.loadSprite("enemy-normal", normalEnemySpriteUrl);
+
+    const strongEnemySpriteUrl = createStrongEnemySprite();
+    await this.k.loadSprite("enemy-strong", strongEnemySpriteUrl);
+
+    // Create and load background, XP, health, and projectile sprites
+    const backgroundPatternUrl = createBackgroundPattern();
+    await this.k.loadSprite("background", backgroundPatternUrl);
+
+    const xpSpriteUrl = createXPSprite();
+    await this.k.loadSprite("xp", xpSpriteUrl);
+
+    const healthSpriteUrl = createHealthSprite();
+    await this.k.loadSprite("health", healthSpriteUrl);
+
+    const projectileSpriteUrl = createProjectileSprite();
+    await this.k.loadSprite("projectile", projectileSpriteUrl);
+
+    const targetingZoneSpriteUrl = createTargetingZoneSprite();
+    await this.k.loadSprite("targeting-zone", targetingZoneSpriteUrl);
+
+    // Create tiled simple background
+    const tileSize = 64;
+    const tilesX = Math.ceil(this.k.width() / tileSize) + 1;
+    const tilesY = Math.ceil(this.k.height() / tileSize) + 1;
+    for (let x = 0; x < tilesX; x++) {
+      for (let y = 0; y < tilesY; y++) {
+        this.k.add([
+          this.k.sprite("background"),
+          this.k.pos(x * tileSize, y * tileSize),
+          this.k.anchor("topleft"),
+          this.k.z(0),
+        ]);
+      }
+    }
 
     // Create player with sprite
     const player = this.k.add([
@@ -262,50 +309,26 @@ export class Game {
     // Start with idle animation facing down
     player.play("idle-down");
 
-    // Draw targeting zone circle (white dotted line)
-    // Use onUpdate to draw the dotted circle each frame
+    // Draw targeting zone circle (white dotted line) using sprite
+    const baseSpriteSize = 300; // Size of the sprite we created
+    const scaleValue = (targetingZoneRadius * 2) / baseSpriteSize;
     const zoneCircle = this.k.add([
+      this.k.sprite("targeting-zone"),
       this.k.pos(player.pos.x, player.pos.y),
       this.k.anchor("center"),
-      this.k.opacity(0.2), // Less visible
-      this.k.z(50),
+      this.k.z(50), // Above background but below most game objects
+      this.k.opacity(0.5), // Semi-transparent
+      this.k.scale(this.k.vec2(scaleValue, scaleValue)), // Scale to match radius
       "targetingZone",
     ]);
 
-    // Draw dotted circle in onUpdate
-    const k = this.k; // Store reference for closure
+    // Update position and scale to follow player and match current radius
     zoneCircle.onUpdate(() => {
-      // Update position to follow player
       zoneCircle.pos.x = player.pos.x;
       zoneCircle.pos.y = player.pos.y;
-
-      // Draw dotted circle with current radius
-      const segments = 64; // Number of segments for smooth circle
-      const dashLength = 5; // Length of each dash
-      const gapLength = 3; // Length of gap between dashes
-      const dashPattern = dashLength + gapLength;
-
-      for (let i = 0; i < segments; i++) {
-        const angle1 = (i / segments) * Math.PI * 2;
-        const angle2 = ((i + 1) / segments) * Math.PI * 2;
-
-        const dashIndex = Math.floor((i * dashPattern) / segments);
-        const isDash = (dashIndex * dashPattern) % dashPattern < dashLength;
-
-        if (isDash) {
-          const x1 = Math.cos(angle1) * targetingZoneRadius;
-          const y1 = Math.sin(angle1) * targetingZoneRadius;
-          const x2 = Math.cos(angle2) * targetingZoneRadius;
-          const y2 = Math.sin(angle2) * targetingZoneRadius;
-
-          k.drawLine({
-            p1: k.vec2(zoneCircle.pos.x + x1, zoneCircle.pos.y + y1),
-            p2: k.vec2(zoneCircle.pos.x + x2, zoneCircle.pos.y + y2),
-            width: 2,
-            color: k.rgb(255, 255, 255),
-          });
-        }
-      }
+      // Update scale if radius changes (from upgrades)
+      const newScale = (targetingZoneRadius * 2) / baseSpriteSize;
+      zoneCircle.scale = this.k.vec2(newScale, newScale);
     });
 
     // Auto-fire at closest enemy within zone
@@ -681,13 +704,9 @@ export class Game {
   }
 
   private spawnXP(position: { x: number; y: number }): void {
-    const xpSize = 8;
-    const xpColor = [100, 200, 255]; // Light blue color
-
-    // Create XP point
+    // Create XP point with gem sprite
     const xp = this.k.add([
-      this.k.rect(xpSize, xpSize),
-      this.k.color(xpColor[0], xpColor[1], xpColor[2]),
+      this.k.sprite("xp"),
       this.k.pos(position.x, position.y),
       this.k.anchor("center"),
       this.k.area(),
@@ -695,7 +714,7 @@ export class Game {
       "xp",
     ]);
 
-    // Optional: Add a pulsing animation
+    // Add a pulsing animation
     xp.onUpdate(() => {
       // Simple pulsing effect
       const scale = 1 + Math.sin(this.k.time() * 5) * 0.2;
@@ -704,13 +723,9 @@ export class Game {
   }
 
   private spawnHealthPoint(position: { x: number; y: number }): void {
-    const healthSize = 10;
-    const healthColor = [255, 0, 0]; // Red color for health
-
-    // Create health point
+    // Create health point with heart sprite
     const healthPoint = this.k.add([
-      this.k.rect(healthSize, healthSize),
-      this.k.color(healthColor[0], healthColor[1], healthColor[2]),
+      this.k.sprite("health"),
       this.k.pos(position.x, position.y),
       this.k.anchor("center"),
       this.k.area(),
@@ -718,7 +733,7 @@ export class Game {
       "healthPoint",
     ]);
 
-    // Optional: Add a pulsing animation
+    // Add a pulsing animation
     healthPoint.onUpdate(() => {
       // Simple pulsing effect
       const scale = 1 + Math.sin(this.k.time() * 5) * 0.2;
@@ -758,12 +773,11 @@ export class Game {
 
     // Enemy type is determined by the parameter
     const enemyHealth = isStrongEnemy ? 2 : 1;
-    const enemyColor = isStrongEnemy ? [255, 255, 0] : [0, 255, 0]; // Yellow for strong enemy, green for normal
+    const enemySpriteName = isStrongEnemy ? "enemy-strong" : "enemy-normal";
 
-    // Create enemy
+    // Create enemy with sprite
     const enemy = this.k.add([
-      this.k.rect(enemySize, enemySize),
-      this.k.color(enemyColor[0], enemyColor[1], enemyColor[2]),
+      this.k.sprite(enemySpriteName),
       this.k.pos(spawnX, spawnY),
       this.k.anchor("center"),
       this.k.area(),
@@ -906,13 +920,16 @@ export class Game {
     const projectileSpeed = 300; // pixels per second
     const projectileSize = 8;
 
-    // Create projectile
+    // Calculate rotation angle in degrees (Kaplay uses degrees)
+    const angle = Math.atan2(directionY, directionX) * (180 / Math.PI);
+
+    // Create projectile with sprite
     const projectile = this.k.add([
-      this.k.rect(projectileSize, projectileSize),
-      this.k.color(255, 200, 0), // Yellow/orange color
+      this.k.sprite("projectile"),
       this.k.pos(startPos.x, startPos.y),
       this.k.anchor("center"),
       this.k.area(),
+      this.k.rotate(angle), // Rotate projectile to face direction
       "projectile",
     ]);
 
