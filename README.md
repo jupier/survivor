@@ -60,6 +60,18 @@ Preview production build:
 npm run preview
 ```
 
+### Deployment
+
+The game is automatically deployed to GitHub Pages when you push to the `main` branch.
+
+**Manual setup (first time only):**
+1. Go to your repository settings on GitHub
+2. Navigate to "Pages" in the left sidebar
+3. Under "Source", select "GitHub Actions"
+4. The workflow will automatically deploy on every push to `main`
+
+The game will be available at: `https://jupier.github.io/survivor/`
+
 ## Project Structure
 
 ```
