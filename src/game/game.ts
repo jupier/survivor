@@ -3,6 +3,7 @@ import { createPlayerSprite } from "../assets/create-player-sprite";
 import {
   createNormalEnemySprite,
   createStrongEnemySprite,
+  createEliteEnemySprite,
 } from "../assets/create-enemy-sprites";
 import { createBackgroundPattern } from "../assets/create-background-sprite";
 import { createXPSprite } from "../assets/create-xp-sprite";
@@ -42,6 +43,7 @@ export class Game {
     // Enemy scaling
     let enemySpawnController: any = null; // Controller for normal enemy spawn loop
     let strongEnemySpawnController: any = null; // Controller for strong enemy spawn loop
+    let eliteEnemySpawnController: any = null; // Controller for elite enemy spawn loop
     let lastSpawnRateIncrease = 0; // Track when we last increased spawn rate
 
     // Create and load player sprite with directional animations
@@ -71,6 +73,9 @@ export class Game {
 
     const strongEnemySpriteUrl = createStrongEnemySprite();
     await this.k.loadSprite("enemy-strong", strongEnemySpriteUrl);
+
+    const eliteEnemySpriteUrl = createEliteEnemySprite();
+    await this.k.loadSprite("enemy-elite", eliteEnemySpriteUrl);
 
     // Create and load background, XP, health, and projectile sprites
     const backgroundPatternUrl = createBackgroundPattern();
@@ -298,7 +303,15 @@ export class Game {
     this.k.wait(30, () => {
       // Start spawning strong enemies after 30 seconds
       strongEnemySpawnController = this.k.loop(enemySpawnInterval, () => {
-        this.spawnEnemy(player, enemySpeed, enemySize, true); // true = strong enemy
+        this.spawnEnemy(player, enemySpeed, enemySize, true); // true = strong enemy (2 HP)
+      });
+    });
+
+    // Spawn elite enemies after 60 seconds (1 minute)
+    this.k.wait(60, () => {
+      // Start spawning elite enemies after 60 seconds
+      eliteEnemySpawnController = this.k.loop(enemySpawnInterval, () => {
+        this.spawnEnemy(player, enemySpeed, enemySize, false, true); // elite enemy (3 HP)
       });
     });
 
@@ -467,7 +480,14 @@ export class Game {
           if (strongEnemySpawnController) {
             strongEnemySpawnController.cancel();
             strongEnemySpawnController = this.k.loop(enemySpawnInterval, () => {
-              this.spawnEnemy(player, enemySpeed, enemySize, true); // true = strong enemy
+              this.spawnEnemy(player, enemySpeed, enemySize, true); // true = strong enemy (2 HP)
+            });
+          }
+          // Also update elite enemy spawn loop if it exists (after 60 seconds)
+          if (eliteEnemySpawnController) {
+            eliteEnemySpawnController.cancel();
+            eliteEnemySpawnController = this.k.loop(enemySpawnInterval, () => {
+              this.spawnEnemy(player, enemySpeed, enemySize, false, true); // elite enemy (3 HP)
             });
           }
         }
@@ -745,7 +765,8 @@ export class Game {
     player: any,
     enemySpeed: number,
     enemySize: number,
-    isStrongEnemy: boolean
+    isStrongEnemy: boolean,
+    isEliteEnemy: boolean = false
   ): void {
     // Spawn enemy at random position on the map edges
     const side = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
@@ -771,9 +792,19 @@ export class Game {
         break;
     }
 
-    // Enemy type is determined by the parameter
-    const enemyHealth = isStrongEnemy ? 2 : 1;
-    const enemySpriteName = isStrongEnemy ? "enemy-strong" : "enemy-normal";
+    // Enemy type is determined by the parameters
+    let enemyHealth: number;
+    let enemySpriteName: string;
+    if (isEliteEnemy) {
+      enemyHealth = 3;
+      enemySpriteName = "enemy-elite";
+    } else if (isStrongEnemy) {
+      enemyHealth = 2;
+      enemySpriteName = "enemy-strong";
+    } else {
+      enemyHealth = 1;
+      enemySpriteName = "enemy-normal";
+    }
 
     // Create enemy with sprite
     const enemy = this.k.add([
@@ -788,8 +819,8 @@ export class Game {
     (enemy as any).health = enemyHealth;
     (enemy as any).maxHealth = enemyHealth;
 
-    // Add health bar for strong enemies
-    if (isStrongEnemy) {
+    // Add health bar for enemies with more than 1 HP (strong and elite)
+    if (enemyHealth > 1) {
       const healthBarWidth = enemySize + 4;
       const healthBarHeight = 3;
       const healthBarOffset = -enemySize / 2 - 8;
