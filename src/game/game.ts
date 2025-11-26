@@ -187,7 +187,7 @@ export class Game {
     let statsY = uiPadding;
 
     // Stats title
-    const statsTitle = this.k.add([
+    this.k.add([
       this.k.text("Stats", { size: 18 }),
       this.k.color(255, 255, 255),
       this.k.pos(statsX, statsY),
@@ -341,12 +341,12 @@ export class Game {
       let moveX = 0;
       let moveY = 0;
 
-      // Check for vertical movement
-      const upPressed = this.k.isKeyDown("z");
-      const downPressed = this.k.isKeyDown("s");
-      // Check for horizontal movement
-      const leftPressed = this.k.isKeyDown("q");
-      const rightPressed = this.k.isKeyDown("d");
+      // Check for vertical movement (z/s or arrow up/down)
+      const upPressed = this.k.isKeyDown("z") || this.k.isKeyDown("up");
+      const downPressed = this.k.isKeyDown("s") || this.k.isKeyDown("down");
+      // Check for horizontal movement (q/d or arrow left/right)
+      const leftPressed = this.k.isKeyDown("q") || this.k.isKeyDown("left");
+      const rightPressed = this.k.isKeyDown("d") || this.k.isKeyDown("right");
 
       // Allow diagonal movement - combine both axes
       if (upPressed) {
