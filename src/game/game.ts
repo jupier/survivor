@@ -6,6 +6,7 @@ export class Game {
   private isPaused = false;
   private enemiesKilled = 0;
   private pauseOverlay: any = null;
+  private rotatingBlade: any = null;
 
   constructor(container: HTMLElement) {
     const width = Math.min(window.innerWidth, 1200);
@@ -24,11 +25,19 @@ export class Game {
   private async setupGame(): Promise<void> {
     let speed = 120; // pixels per second (mutable for upgrades)
     let fireInterval = 1; // seconds (mutable for upgrades) - faster for auto-targeting
-    const enemySpawnInterval = 1; // seconds (reduced for more enemies)
+    let enemySpawnInterval = 1; // seconds (mutable - increases every 15 seconds)
     const enemySpeed = 100; // pixels per second
     const enemySize = 16; // size of enemy square
     let targetingZoneRadius = 150; // Configurable targeting zone radius (mutable for upgrades)
     let projectileCount = 1; // Number of projectiles fired at once (mutable for upgrades)
+    let hasRotatingBlade = false; // Track if player has blade weapon
+    let bladeRange = 40; // Range/distance in front of player (mutable for upgrades)
+    let bladeWidth = 30; // Width of triangle attack (mutable for upgrades)
+
+    // Enemy scaling
+    let enemySpawnController: any = null; // Controller for normal enemy spawn loop
+    let strongEnemySpawnController: any = null; // Controller for strong enemy spawn loop
+    let lastSpawnRateIncrease = 0; // Track when we last increased spawn rate
 
     // Create and load player sprite with directional animations
     const spriteDataUrl = createPlayerSprite();
@@ -237,9 +246,17 @@ export class Game {
       this.k.z(110),
     ]);
 
-    // Spawn enemies periodically
-    this.k.loop(enemySpawnInterval, () => {
-      this.spawnEnemy(player, enemySpeed, enemySize);
+    // Spawn normal enemies periodically (always active)
+    enemySpawnController = this.k.loop(enemySpawnInterval, () => {
+      this.spawnEnemy(player, enemySpeed, enemySize, false); // false = normal enemy
+    });
+
+    // Spawn strong enemies after 30 seconds
+    this.k.wait(30, () => {
+      // Start spawning strong enemies after 30 seconds
+      strongEnemySpawnController = this.k.loop(enemySpawnInterval, () => {
+        this.spawnEnemy(player, enemySpeed, enemySize, true); // true = strong enemy
+      });
     });
 
     // Track current direction and movement state
@@ -254,7 +271,7 @@ export class Game {
     const zoneCircle = this.k.add([
       this.k.pos(player.pos.x, player.pos.y),
       this.k.anchor("center"),
-      this.k.opacity(0.7),
+      this.k.opacity(0.2), // Less visible
       this.k.z(50),
       "targetingZone",
     ]);
@@ -386,6 +403,11 @@ export class Game {
         } else {
           player.play(`idle-${currentDirection}`);
         }
+
+        // Update blade direction if blade exists
+        if (hasRotatingBlade && this.rotatingBlade) {
+          (this.rotatingBlade as any).currentDirection = currentDirection;
+        }
       } else if (!isMoving && wasMoving) {
         player.play(`idle-${currentDirection}`);
       }
@@ -411,6 +433,30 @@ export class Game {
         const seconds = Math.floor(gameTime % 60);
         const timeString = `${minutes}:${seconds.toString().padStart(2, "0")}`;
         timerText.text = timeString;
+
+        // Increase enemy spawn rate every 15 seconds
+        const gameTimeElapsed = 600 - gameTime;
+        const spawnRateIncreaseInterval = 15;
+        if (
+          gameTimeElapsed - lastSpawnRateIncrease >=
+          spawnRateIncreaseInterval
+        ) {
+          lastSpawnRateIncrease = gameTimeElapsed;
+          // Reduce spawn interval (spawn more frequently)
+          enemySpawnInterval = Math.max(0.3, enemySpawnInterval * 0.9); // 10% faster
+          // Restart normal enemy spawn loop with new interval
+          enemySpawnController.cancel();
+          enemySpawnController = this.k.loop(enemySpawnInterval, () => {
+            this.spawnEnemy(player, enemySpeed, enemySize, false); // false = normal enemy
+          });
+          // Also update strong enemy spawn loop if it exists (after 30 seconds)
+          if (strongEnemySpawnController) {
+            strongEnemySpawnController.cancel();
+            strongEnemySpawnController = this.k.loop(enemySpawnInterval, () => {
+              this.spawnEnemy(player, enemySpeed, enemySize, true); // true = strong enemy
+            });
+          }
+        }
 
         // Check for time up
         if (gameTime <= 0) {
@@ -524,16 +570,218 @@ export class Game {
             } else if (option === "targetingZone") {
               // Increase targeting zone radius
               targetingZoneRadius = Math.round(targetingZoneRadius * 1.3); // 30% larger
+            } else if (option === "rotatingBlade") {
+              // Add blade weapon
+              if (!hasRotatingBlade) {
+                hasRotatingBlade = true;
+                this.createBlade(
+                  player,
+                  bladeRange,
+                  bladeWidth,
+                  currentDirection
+                );
+              }
+            } else if (option === "bladeSize") {
+              // Increase blade range
+              if (hasRotatingBlade && this.rotatingBlade) {
+                bladeRange = Math.round(bladeRange * 1.3); // 30% larger
+                (this.rotatingBlade as any).currentRange = bladeRange;
+              }
+            } else if (option === "bladeSpeed") {
+              // Increase blade width (attack area)
+              if (hasRotatingBlade && this.rotatingBlade) {
+                bladeWidth = Math.round(bladeWidth * 1.3); // 30% wider
+                (this.rotatingBlade as any).currentWidth = bladeWidth;
+              }
             }
-          }
+          },
+          hasRotatingBlade
         );
+      }
+    });
+
+    // Handle player collision with health points
+    player.onCollide("healthPoint", (healthPoint) => {
+      if (playerHealth < maxHealth) {
+        playerHealth = Math.min(maxHealth, playerHealth + 1); // Restore 1 health point
+      }
+      healthPoint.destroy();
+    });
+  }
+
+  private createBlade(
+    player: any,
+    initialRange: number,
+    initialWidth: number,
+    initialDirection: "up" | "down" | "left" | "right"
+  ): void {
+    let currentRange = initialRange;
+    let currentWidth = initialWidth;
+    let currentDirection = initialDirection;
+
+    // Create blade as a triangle area in front of player
+    // Use a polygon shape for triangle collision
+    const bladeTriangle = this.k.add([
+      this.k.pos(player.pos.x, player.pos.y),
+      this.k.anchor("center"),
+      this.k.area({
+        shape: new this.k.Polygon([
+          this.k.vec2(0, 0),
+          this.k.vec2(-currentWidth / 2, currentRange),
+          this.k.vec2(currentWidth / 2, currentRange),
+        ]),
+      }),
+      this.k.opacity(0), // Invisible (just for collision)
+      this.k.z(40),
+      "rotatingBlade",
+    ]);
+
+    // Store references for upgrades
+    (bladeTriangle as any).currentRange = currentRange;
+    (bladeTriangle as any).currentWidth = currentWidth;
+    (bladeTriangle as any).currentDirection = currentDirection;
+    this.rotatingBlade = bladeTriangle;
+
+    // Update blade position and shape based on player direction
+    bladeTriangle.onUpdate(() => {
+      if (this.isPaused) {
+        return;
+      }
+
+      // Update range and width from upgrades (if changed)
+      if ((bladeTriangle as any).currentRange !== currentRange) {
+        currentRange = (bladeTriangle as any).currentRange;
+      }
+      if ((bladeTriangle as any).currentWidth !== currentWidth) {
+        currentWidth = (bladeTriangle as any).currentWidth;
+      }
+      if ((bladeTriangle as any).currentDirection !== currentDirection) {
+        currentDirection = (bladeTriangle as any).currentDirection;
+      }
+
+      // Calculate offset based on player direction
+      let offsetX = 0;
+      let offsetY = 0;
+
+      switch (currentDirection) {
+        case "up":
+          offsetY = -currentRange / 2;
+          break;
+        case "down":
+          offsetY = currentRange / 2;
+          break;
+        case "left":
+          offsetX = -currentRange / 2;
+          break;
+        case "right":
+          offsetX = currentRange / 2;
+          break;
+      }
+
+      // Update blade position to be in front of player
+      bladeTriangle.pos.x = player.pos.x + offsetX;
+      bladeTriangle.pos.y = player.pos.y + offsetY;
+
+      // Update triangle shape based on direction
+      const halfWidth = currentWidth / 2;
+      let trianglePoints: any[] = [];
+
+      switch (currentDirection) {
+        case "up":
+          trianglePoints = [
+            this.k.vec2(0, -currentRange / 2), // Tip (top)
+            this.k.vec2(-halfWidth, currentRange / 2), // Bottom left
+            this.k.vec2(halfWidth, currentRange / 2), // Bottom right
+          ];
+          break;
+        case "down":
+          trianglePoints = [
+            this.k.vec2(0, currentRange / 2), // Tip (bottom)
+            this.k.vec2(-halfWidth, -currentRange / 2), // Top left
+            this.k.vec2(halfWidth, -currentRange / 2), // Top right
+          ];
+          break;
+        case "left":
+          trianglePoints = [
+            this.k.vec2(-currentRange / 2, 0), // Tip (left)
+            this.k.vec2(currentRange / 2, -halfWidth), // Top right
+            this.k.vec2(currentRange / 2, halfWidth), // Bottom right
+          ];
+          break;
+        case "right":
+          trianglePoints = [
+            this.k.vec2(currentRange / 2, 0), // Tip (right)
+            this.k.vec2(-currentRange / 2, -halfWidth), // Top left
+            this.k.vec2(-currentRange / 2, halfWidth), // Bottom left
+          ];
+          break;
+      }
+
+      bladeTriangle.area.shape = new this.k.Polygon(trianglePoints);
+    });
+
+    // Handle collision with enemies
+    bladeTriangle.onCollide("enemy", (enemy: any) => {
+      // Reduce enemy health
+      if (!(enemy as any).health) {
+        (enemy as any).health = 1;
+      }
+      (enemy as any).health -= 1;
+
+      // Check if enemy is dead
+      if ((enemy as any).health <= 0) {
+        // Spawn XP point at enemy position
+        this.spawnXP(enemy.pos);
+
+        // Rare chance to spawn health point (10% chance)
+        if (Math.random() < 0.1) {
+          this.spawnHealthPoint(enemy.pos);
+        }
+
+        // Increment kill counter
+        this.enemiesKilled++;
+
+        // Destroy the enemy
+        enemy.destroy();
       }
     });
   }
 
+  private createBladeSprite(): string {
+    // Create a blade sprite programmatically
+    const canvas = document.createElement("canvas");
+    canvas.width = 16;
+    canvas.height = 32;
+    const ctx = canvas.getContext("2d")!;
+
+    // Draw blade shape (sword-like)
+    // Blade body (silver/gray)
+    ctx.fillStyle = "#c0c0c0"; // Silver
+    ctx.beginPath();
+    ctx.moveTo(8, 0); // Tip
+    ctx.lineTo(6, 8); // Left edge
+    ctx.lineTo(10, 8); // Right edge
+    ctx.closePath();
+    ctx.fill();
+
+    // Blade body (wider part)
+    ctx.fillRect(5, 8, 6, 16);
+
+    // Blade handle (darker)
+    ctx.fillStyle = "#8b4513"; // Brown handle
+    ctx.fillRect(6, 24, 4, 8);
+
+    // Blade guard (cross guard)
+    ctx.fillStyle = "#a0a0a0"; // Darker silver
+    ctx.fillRect(2, 20, 12, 2);
+
+    return canvas.toDataURL();
+  }
+
   private showLevelUpMenu(
     onClose: () => void,
-    onSelect: (option: string) => void
+    onSelect: (option: string) => void,
+    hasRotatingBlade: boolean = false
   ): void {
     // Create semi-transparent overlay
     this.k.add([
@@ -549,7 +797,7 @@ export class Game {
 
     // Menu background
     const menuWidth = 400;
-    const menuHeight = 300;
+    const menuHeight = 420; // Increased to fit 7 options
     const menuX = (this.k.width() - menuWidth) / 2;
     const menuY = (this.k.height() - menuHeight) / 2;
 
@@ -580,6 +828,9 @@ export class Game {
       { id: "projectileCount", text: "Increase Projectile Count" },
       { id: "movementSpeed", text: "Increase Movement Speed" },
       { id: "targetingZone", text: "Increase Targeting Range" },
+      { id: "rotatingBlade", text: "Blade Weapon" },
+      { id: "bladeSize", text: "Increase Blade Range" },
+      { id: "bladeSpeed", text: "Increase Blade Width" },
     ];
 
     const optionHeight = 50;
@@ -588,7 +839,11 @@ export class Game {
 
     options.forEach((option, index) => {
       const optionY = startY + index * (optionHeight + optionSpacing);
-      const isEnabled = true; // All options are now enabled
+      // Blade size and speed only enabled if blade is already unlocked
+      const isEnabled =
+        option.id === "bladeSize" || option.id === "bladeSpeed"
+          ? hasRotatingBlade
+          : true;
 
       // Option background
       const optionBg = this.k.add([
@@ -658,7 +913,35 @@ export class Game {
     });
   }
 
-  private spawnEnemy(player: any, enemySpeed: number, enemySize: number): void {
+  private spawnHealthPoint(position: { x: number; y: number }): void {
+    const healthSize = 10;
+    const healthColor = [255, 0, 0]; // Red color for health
+
+    // Create health point
+    const healthPoint = this.k.add([
+      this.k.rect(healthSize, healthSize),
+      this.k.color(healthColor[0], healthColor[1], healthColor[2]),
+      this.k.pos(position.x, position.y),
+      this.k.anchor("center"),
+      this.k.area(),
+      this.k.scale(),
+      "healthPoint",
+    ]);
+
+    // Optional: Add a pulsing animation
+    healthPoint.onUpdate(() => {
+      // Simple pulsing effect
+      const scale = 1 + Math.sin(this.k.time() * 5) * 0.2;
+      healthPoint.scale = this.k.vec2(scale, scale);
+    });
+  }
+
+  private spawnEnemy(
+    player: any,
+    enemySpeed: number,
+    enemySize: number,
+    isStrongEnemy: boolean
+  ): void {
     // Spawn enemy at random position on the map edges
     const side = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
     let spawnX = 0;
@@ -683,15 +966,76 @@ export class Game {
         break;
     }
 
-    // Create enemy as red square
+    // Enemy type is determined by the parameter
+    const enemyHealth = isStrongEnemy ? 2 : 1;
+    const enemyColor = isStrongEnemy ? [255, 255, 0] : [0, 255, 0]; // Yellow for strong enemy, green for normal
+
+    // Create enemy
     const enemy = this.k.add([
       this.k.rect(enemySize, enemySize),
-      this.k.color(255, 0, 0), // Red color
+      this.k.color(enemyColor[0], enemyColor[1], enemyColor[2]),
       this.k.pos(spawnX, spawnY),
       this.k.anchor("center"),
       this.k.area(),
       "enemy",
     ]);
+
+    // Add health tracking to enemy
+    (enemy as any).health = enemyHealth;
+    (enemy as any).maxHealth = enemyHealth;
+
+    // Add health bar for strong enemies
+    if (isStrongEnemy) {
+      const healthBarWidth = enemySize + 4;
+      const healthBarHeight = 3;
+      const healthBarOffset = -enemySize / 2 - 8;
+
+      // Health bar background
+      const healthBarBg = this.k.add([
+        this.k.rect(healthBarWidth, healthBarHeight),
+        this.k.color(60, 60, 60),
+        this.k.pos(spawnX, spawnY + healthBarOffset),
+        this.k.anchor("center"),
+        this.k.z(60),
+      ]);
+
+      // Health bar fill (green)
+      const healthBar = this.k.add([
+        this.k.rect(healthBarWidth, healthBarHeight),
+        this.k.color(0, 255, 0), // Green color
+        this.k.pos(spawnX, spawnY + healthBarOffset),
+        this.k.anchor("center"),
+        this.k.z(61),
+      ]);
+
+      // Store health bar references on enemy
+      (enemy as any).healthBarBg = healthBarBg;
+      (enemy as any).healthBar = healthBar;
+      (enemy as any).healthBarWidth = healthBarWidth;
+      (enemy as any).healthBarOffset = healthBarOffset;
+
+      // Update health bar position and value
+      enemy.onUpdate(() => {
+        healthBarBg.pos.x = enemy.pos.x;
+        healthBarBg.pos.y = enemy.pos.y + healthBarOffset;
+        healthBar.pos.x = enemy.pos.x;
+        healthBar.pos.y = enemy.pos.y + healthBarOffset;
+
+        const healthPercentage =
+          (enemy as any).health / (enemy as any).maxHealth;
+        healthBar.width = healthBarWidth * healthPercentage;
+      });
+
+      // Clean up health bar when enemy is destroyed
+      enemy.onDestroy(() => {
+        if ((enemy as any).healthBarBg) {
+          (enemy as any).healthBarBg.destroy();
+        }
+        if ((enemy as any).healthBar) {
+          (enemy as any).healthBar.destroy();
+        }
+      });
+    }
 
     // Move enemy towards player
     enemy.onUpdate(() => {
@@ -784,15 +1128,31 @@ export class Game {
 
     // Handle collision with enemies
     projectile.onCollide("enemy", (enemy) => {
-      // Spawn XP point at enemy position
-      this.spawnXP(enemy.pos);
+      // Reduce enemy health
+      if (!(enemy as any).health) {
+        (enemy as any).health = 1;
+      }
+      (enemy as any).health -= 1;
 
-      // Increment kill counter
-      this.enemiesKilled++;
-
-      // Destroy both the enemy and the projectile
-      enemy.destroy();
+      // Destroy projectile
       projectile.destroy();
+
+      // Check if enemy is dead
+      if ((enemy as any).health <= 0) {
+        // Spawn XP point at enemy position
+        this.spawnXP(enemy.pos);
+
+        // Rare chance to spawn health point (10% chance)
+        if (Math.random() < 0.1) {
+          this.spawnHealthPoint(enemy.pos);
+        }
+
+        // Increment kill counter
+        this.enemiesKilled++;
+
+        // Destroy the enemy
+        enemy.destroy();
+      }
     });
 
     // Move projectile in the direction the player is facing
