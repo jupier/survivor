@@ -4,6 +4,8 @@ import { createPlayerSprite } from "../assets/create-player-sprite";
 export class Game {
   private k: ReturnType<typeof kaplay>;
   private isPaused = false;
+  private enemiesKilled = 0;
+  private pauseOverlay: any = null;
 
   constructor(container: HTMLElement) {
     const width = Math.min(window.innerWidth, 1200);
@@ -21,10 +23,11 @@ export class Game {
 
   private async setupGame(): Promise<void> {
     const speed = 120; // pixels per second
-    let fireInterval = 2; // seconds (mutable for upgrades)
-    const enemySpawnInterval = 3; // seconds
-    const enemySpeed = 50; // pixels per second
+    let fireInterval = 1; // seconds (mutable for upgrades) - faster for auto-targeting
+    const enemySpawnInterval = 1; // seconds (reduced for more enemies)
+    const enemySpeed = 100; // pixels per second
     const enemySize = 16; // size of enemy square
+    const targetingZoneRadius = 150; // Configurable targeting zone radius
 
     // Create and load player sprite with directional animations
     const spriteDataUrl = createPlayerSprite();
@@ -53,6 +56,8 @@ export class Game {
       this.k.pos(this.k.width() / 2, this.k.height() / 2),
       this.k.anchor("center"),
       this.k.area(),
+      this.k.opacity(1),
+      this.k.scale(),
       this.k.timer(),
       "player",
     ]);
@@ -60,22 +65,114 @@ export class Game {
     // Player experience tracking
     let playerExperience = 0;
     let playerLevel = 1;
-    const maxExperience = 20; // Experience needed to level up (reduced)
+    const maxExperience = 50; // Experience needed to level up (increased)
 
-    // Create experience bar UI at the top
-    const expBarWidth = 300;
-    const expBarHeight = 20;
-    const expBarX = 20;
-    const expBarY = 20;
+    // Player health tracking
+    let playerHealth = 2;
+    const maxHealth = 2;
 
-    // Experience bar (blue) - will be updated
-    const expBar = this.k.add([
-      this.k.rect(0, expBarHeight),
-      this.k.color(74, 158, 255), // Blue color matching player
-      this.k.pos(expBarX, expBarY),
+    // Game timer (10 minutes = 600 seconds)
+    let gameTime = 600; // seconds
+
+    // UI Layout constants
+    const uiPadding = 20;
+    const barWidth = 250;
+    const barHeight = 18;
+    const barSpacing = 8;
+    let currentY = uiPadding;
+
+    // Level display (top left)
+    const levelText = this.k.add([
+      this.k.text("Level: 1", { size: 24 }),
+      this.k.color(255, 215, 0), // Gold color
+      this.k.pos(uiPadding, currentY),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(110),
+    ]);
+    currentY += 30;
+
+    // Timer display (below level)
+    const timerText = this.k.add([
+      this.k.text("10:00", { size: 20 }),
+      this.k.color(255, 255, 255),
+      this.k.pos(uiPadding, currentY),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(110),
+    ]);
+    currentY += 30;
+
+    // Kills counter (below timer)
+    const killsText = this.k.add([
+      this.k.text("Kills: 0", { size: 20 }),
+      this.k.color(255, 255, 255),
+      this.k.pos(uiPadding, currentY),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(110),
+    ]);
+    currentY += 35;
+
+    // Experience bar background (gray)
+    this.k.add([
+      this.k.rect(barWidth, barHeight),
+      this.k.color(60, 60, 60),
+      this.k.pos(uiPadding, currentY),
       this.k.anchor("topleft"),
       this.k.fixed(),
       this.k.z(101),
+    ]);
+
+    // Experience bar (blue) - will be updated
+    const expBar = this.k.add([
+      this.k.rect(0, barHeight),
+      this.k.color(74, 158, 255), // Blue color matching player
+      this.k.pos(uiPadding, currentY),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(102),
+    ]);
+
+    // Experience label
+    this.k.add([
+      this.k.text("XP", { size: 14 }),
+      this.k.color(200, 200, 200),
+      this.k.pos(uiPadding + 5, currentY + barHeight / 2),
+      this.k.anchor("left"),
+      this.k.fixed(),
+      this.k.z(103),
+    ]);
+    currentY += barHeight + barSpacing;
+
+    // Life bar background (gray)
+    this.k.add([
+      this.k.rect(barWidth, barHeight),
+      this.k.color(60, 60, 60),
+      this.k.pos(uiPadding, currentY),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(101),
+    ]);
+
+    // Life bar (red) - will be updated
+    const lifeBar = this.k.add([
+      this.k.rect(barWidth, barHeight),
+      this.k.color(255, 0, 0), // Red color
+      this.k.pos(uiPadding, currentY),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(102),
+    ]);
+
+    // Health label
+    this.k.add([
+      this.k.text("HP", { size: 14 }),
+      this.k.color(200, 200, 200),
+      this.k.pos(uiPadding + 5, currentY + barHeight / 2),
+      this.k.anchor("left"),
+      this.k.fixed(),
+      this.k.z(103),
     ]);
 
     // Spawn enemies periodically
@@ -90,9 +187,70 @@ export class Game {
     // Start with idle animation facing down
     player.play("idle-down");
 
-    // Fire projectiles every 2 seconds in the direction the player is facing
+    // Draw targeting zone circle (white dotted line)
+    // Use onUpdate to draw the dotted circle each frame
+    const zoneCircle = this.k.add([
+      this.k.pos(player.pos.x, player.pos.y),
+      this.k.anchor("center"),
+      this.k.opacity(0.7),
+      this.k.z(50),
+      "targetingZone",
+    ]);
+
+    // Draw dotted circle in onUpdate
+    const k = this.k; // Store reference for closure
+    zoneCircle.onUpdate(() => {
+      // Draw dotted circle
+      const segments = 64; // Number of segments for smooth circle
+      const dashLength = 5; // Length of each dash
+      const gapLength = 3; // Length of gap between dashes
+      const dashPattern = dashLength + gapLength;
+
+      for (let i = 0; i < segments; i++) {
+        const angle1 = (i / segments) * Math.PI * 2;
+        const angle2 = ((i + 1) / segments) * Math.PI * 2;
+
+        const dashIndex = Math.floor((i * dashPattern) / segments);
+        const isDash = (dashIndex * dashPattern) % dashPattern < dashLength;
+
+        if (isDash) {
+          const x1 = Math.cos(angle1) * targetingZoneRadius;
+          const y1 = Math.sin(angle1) * targetingZoneRadius;
+          const x2 = Math.cos(angle2) * targetingZoneRadius;
+          const y2 = Math.sin(angle2) * targetingZoneRadius;
+
+          k.drawLine({
+            p1: k.vec2(zoneCircle.pos.x + x1, zoneCircle.pos.y + y1),
+            p2: k.vec2(zoneCircle.pos.x + x2, zoneCircle.pos.y + y2),
+            width: 2,
+            color: k.rgb(255, 255, 255),
+          });
+        }
+      }
+    });
+
+    // Update zone circle position to follow player
+    zoneCircle.onUpdate(() => {
+      zoneCircle.pos.x = player.pos.x;
+      zoneCircle.pos.y = player.pos.y;
+    });
+
+    // Auto-fire at closest enemy within zone
     let fireLoopController = player.loop(fireInterval, () => {
-      this.fireProjectile(player.pos, currentDirection);
+      if (!this.isPaused) {
+        this.autoFireAtClosestEnemy(player, targetingZoneRadius);
+      }
+    });
+
+    // Handle ESC key to pause/unpause (check outside of paused check)
+    this.k.onKeyPress("escape", () => {
+      this.isPaused = !this.isPaused;
+      // Show/hide pause overlay
+      if (this.isPaused) {
+        this.showPauseMenu();
+      } else {
+        this.hidePauseMenu();
+      }
     });
 
     // Handle continuous movement with z/q/s/d keys
@@ -168,9 +326,85 @@ export class Game {
         //player.pos.y = this.k.clamp(player.pos.y, 10, this.k.height() - 10);
       }
 
+      // Update timer (only if not paused)
+      if (!this.isPaused && gameTime > 0) {
+        gameTime -= this.k.dt();
+        if (gameTime < 0) {
+          gameTime = 0;
+        }
+
+        // Format timer as MM:SS
+        const minutes = Math.floor(gameTime / 60);
+        const seconds = Math.floor(gameTime % 60);
+        const timeString = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+        timerText.text = timeString;
+
+        // Check for time up
+        if (gameTime <= 0) {
+          this.handlePlayerDeath();
+        }
+      }
+
       // Update experience bar
       const expPercentage = Math.min(playerExperience / maxExperience, 1);
-      expBar.width = expBarWidth * expPercentage;
+      expBar.width = barWidth * expPercentage;
+
+      // Update life bar
+      const healthPercentage = Math.max(0, playerHealth / maxHealth);
+      lifeBar.width = barWidth * healthPercentage;
+
+      // Update kills counter
+      killsText.text = `Kills: ${this.enemiesKilled}`;
+
+      // Update level display
+      levelText.text = `Level: ${playerLevel}`;
+    });
+
+    // Handle player collision with enemies
+    let isInvulnerable = false; // Prevent multiple hits in quick succession
+    player.onCollide("enemy", (enemy) => {
+      if (!this.isPaused && !isInvulnerable) {
+        playerHealth -= 1;
+        enemy.destroy(); // Destroy enemy on contact
+
+        // Hit animation: flash opacity and scale shake
+        isInvulnerable = true;
+        const originalOpacity = player.opacity ?? 1;
+        const originalScale = player.scale ?? this.k.vec2(1, 1);
+
+        // Flash and shake animation
+        let flashCount = 0;
+        const flashDuration = 0.5; // seconds
+        const flashInterval = 0.05; // flash every 0.05 seconds
+
+        const flashTimer = this.k.loop(flashInterval, () => {
+          flashCount++;
+          const flashProgress = (flashCount * flashInterval) / flashDuration;
+
+          if (flashProgress >= 1) {
+            // Animation complete
+            player.opacity = originalOpacity;
+            player.scale = originalScale;
+            flashTimer.cancel();
+            isInvulnerable = false;
+          } else {
+            // Flash opacity between 0.3 and 1.0
+            const opacity = flashCount % 2 === 0 ? 0.3 : 1.0;
+            player.opacity = opacity;
+
+            // Slight scale shake
+            const shakeAmount = 0.1;
+            const shakeX = (Math.random() - 0.5) * shakeAmount;
+            const shakeY = (Math.random() - 0.5) * shakeAmount;
+            player.scale = this.k.vec2(1 + shakeX, 1 + shakeY);
+          }
+        });
+
+        // Check if player is dead
+        if (playerHealth <= 0) {
+          this.handlePlayerDeath();
+        }
+      }
     });
 
     // Handle player collision with XP points
@@ -194,7 +428,9 @@ export class Game {
               // Cancel old loop and start new one with updated interval
               fireLoopController.cancel();
               fireLoopController = player.loop(fireInterval, () => {
-                this.fireProjectile(player.pos, currentDirection);
+                if (!this.isPaused) {
+                  this.autoFireAtClosestEnemy(player, targetingZoneRadius);
+                }
               });
             }
             // Other options will be added in the future
@@ -209,7 +445,7 @@ export class Game {
     onSelect: (option: string) => void
   ): void {
     // Create semi-transparent overlay
-    const overlay = this.k.add([
+    this.k.add([
       this.k.rect(this.k.width(), this.k.height()),
       this.k.color(0, 0, 0),
       this.k.opacity(0.7),
@@ -217,6 +453,7 @@ export class Game {
       this.k.anchor("topleft"),
       this.k.fixed(),
       this.k.z(200),
+      "levelUpMenu",
     ]);
 
     // Menu background
@@ -225,23 +462,25 @@ export class Game {
     const menuX = (this.k.width() - menuWidth) / 2;
     const menuY = (this.k.height() - menuHeight) / 2;
 
-    const menuBg = this.k.add([
+    this.k.add([
       this.k.rect(menuWidth, menuHeight),
       this.k.color(50, 50, 50),
       this.k.pos(menuX, menuY),
       this.k.anchor("topleft"),
       this.k.fixed(),
       this.k.z(201),
+      "levelUpMenu",
     ]);
 
     // Title
-    const title = this.k.add([
+    this.k.add([
       this.k.text("Level Up!", { size: 32 }),
       this.k.color(255, 255, 255),
       this.k.pos(this.k.width() / 2, menuY + 40),
       this.k.anchor("center"),
       this.k.fixed(),
       this.k.z(202),
+      "levelUpMenu",
     ]);
 
     // Menu options
@@ -273,6 +512,7 @@ export class Game {
         this.k.z(202),
         this.k.area(),
         `option-${option.id}`,
+        "levelUpMenu",
       ]);
 
       // Option text
@@ -287,18 +527,16 @@ export class Game {
         this.k.anchor("center"),
         this.k.fixed(),
         this.k.z(203),
+        "levelUpMenu",
       ]);
 
       // Handle click on enabled options
       if (isEnabled) {
         optionBg.onClick(() => {
           onSelect(option.id);
-          // Clean up menu
-          overlay.destroy();
-          menuBg.destroy();
-          title.destroy();
-          optionBg.destroy();
-          optionText.destroy();
+          // Clean up all menu elements using the tag
+          const menuElements = this.k.get("levelUpMenu");
+          menuElements.forEach((elem) => elem.destroy());
           onClose();
         });
       }
@@ -385,31 +623,52 @@ export class Game {
     });
   }
 
+  private autoFireAtClosestEnemy(player: any, zoneRadius: number): void {
+    // Find all enemies
+    const enemies = this.k.get("enemy");
+
+    if (enemies.length === 0) {
+      return; // No enemies to target
+    }
+
+    // Find closest enemy within zone
+    let closestEnemy: any = null;
+    let closestDistance = zoneRadius;
+
+    for (const enemy of enemies) {
+      const dx = enemy.pos.x - player.pos.x;
+      const dy = enemy.pos.y - player.pos.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance <= zoneRadius && distance < closestDistance) {
+        closestDistance = distance;
+        closestEnemy = enemy;
+      }
+    }
+
+    // Fire at closest enemy if found
+    if (closestEnemy) {
+      const dx = closestEnemy.pos.x - player.pos.x;
+      const dy = closestEnemy.pos.y - player.pos.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance > 0) {
+        // Normalize direction
+        const directionX = dx / distance;
+        const directionY = dy / distance;
+
+        this.fireProjectile(player.pos, directionX, directionY);
+      }
+    }
+  }
+
   private fireProjectile(
     startPos: { x: number; y: number },
-    direction: "up" | "down" | "left" | "right"
+    directionX: number,
+    directionY: number
   ): void {
     const projectileSpeed = 300; // pixels per second
     const projectileSize = 8;
-
-    // Calculate direction vector based on player direction
-    let directionX = 0;
-    let directionY = 0;
-
-    switch (direction) {
-      case "up":
-        directionY = -1;
-        break;
-      case "down":
-        directionY = 1;
-        break;
-      case "left":
-        directionX = -1;
-        break;
-      case "right":
-        directionX = 1;
-        break;
-    }
 
     // Create projectile
     const projectile = this.k.add([
@@ -425,6 +684,9 @@ export class Game {
     projectile.onCollide("enemy", (enemy) => {
       // Spawn XP point at enemy position
       this.spawnXP(enemy.pos);
+
+      // Increment kill counter
+      this.enemiesKilled++;
 
       // Destroy both the enemy and the projectile
       enemy.destroy();
@@ -455,6 +717,88 @@ export class Game {
 
   public start(): void {
     // Game is already running after kaplay initialization
+  }
+
+  private showPauseMenu(): void {
+    // Create pause overlay
+    this.pauseOverlay = this.k.add([
+      this.k.rect(this.k.width(), this.k.height()),
+      this.k.color(0, 0, 0),
+      this.k.opacity(0.7),
+      this.k.pos(0, 0),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(250),
+      "pause",
+    ]);
+
+    // Pause text
+    this.k.add([
+      this.k.text("PAUSED", { size: 48 }),
+      this.k.color(255, 255, 255),
+      this.k.pos(this.k.width() / 2, this.k.height() / 2),
+      this.k.anchor("center"),
+      this.k.fixed(),
+      this.k.z(251),
+      "pause",
+    ]);
+
+    // Instruction text
+    this.k.add([
+      this.k.text("Press ESC to resume", { size: 20 }),
+      this.k.color(200, 200, 200),
+      this.k.pos(this.k.width() / 2, this.k.height() / 2 + 60),
+      this.k.anchor("center"),
+      this.k.fixed(),
+      this.k.z(251),
+      "pause",
+    ]);
+  }
+
+  private hidePauseMenu(): void {
+    // Remove all pause menu elements
+    const pauseElements = this.k.get("pause");
+    pauseElements.forEach((elem) => elem.destroy());
+
+    if (this.pauseOverlay) {
+      this.pauseOverlay.destroy();
+      this.pauseOverlay = null;
+    }
+  }
+
+  private handlePlayerDeath(): void {
+    this.isPaused = true;
+
+    // Create death screen overlay
+    this.k.add([
+      this.k.rect(this.k.width(), this.k.height()),
+      this.k.color(0, 0, 0),
+      this.k.opacity(0.8),
+      this.k.pos(0, 0),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(300),
+    ]);
+
+    // Death message
+    this.k.add([
+      this.k.text("Game Over", { size: 48 }),
+      this.k.color(255, 0, 0),
+      this.k.pos(this.k.width() / 2, this.k.height() / 2 - 50),
+      this.k.anchor("center"),
+      this.k.fixed(),
+      this.k.z(301),
+    ]);
+
+    // Restart instruction
+    this.k.add([
+      this.k.text("Refresh the page to restart", { size: 24 }),
+      this.k.color(255, 255, 255),
+      this.k.pos(this.k.width() / 2, this.k.height() / 2 + 50),
+      this.k.anchor("center"),
+      this.k.fixed(),
+      this.k.z(301),
+    ]);
   }
 
   public stop(): void {
