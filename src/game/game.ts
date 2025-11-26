@@ -22,12 +22,13 @@ export class Game {
   }
 
   private async setupGame(): Promise<void> {
-    const speed = 120; // pixels per second
+    let speed = 120; // pixels per second (mutable for upgrades)
     let fireInterval = 1; // seconds (mutable for upgrades) - faster for auto-targeting
     const enemySpawnInterval = 1; // seconds (reduced for more enemies)
     const enemySpeed = 100; // pixels per second
     const enemySize = 16; // size of enemy square
-    const targetingZoneRadius = 150; // Configurable targeting zone radius
+    let targetingZoneRadius = 150; // Configurable targeting zone radius (mutable for upgrades)
+    let projectileCount = 1; // Number of projectiles fired at once (mutable for upgrades)
 
     // Create and load player sprite with directional animations
     const spriteDataUrl = createPlayerSprite();
@@ -174,6 +175,67 @@ export class Game {
       this.k.fixed(),
       this.k.z(103),
     ]);
+    currentY += barHeight + barSpacing + 10;
+
+    // Player and Weapon Stats (top right)
+    const statsX = this.k.width() - uiPadding - 200;
+    let statsY = uiPadding;
+
+    // Stats title
+    const statsTitle = this.k.add([
+      this.k.text("Stats", { size: 18 }),
+      this.k.color(255, 255, 255),
+      this.k.pos(statsX, statsY),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(110),
+    ]);
+    statsY += 25;
+
+    // Speed stat
+    const speedStatText = this.k.add([
+      this.k.text(`Speed: ${speed}`, { size: 14 }),
+      this.k.color(200, 200, 200),
+      this.k.pos(statsX, statsY),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(110),
+    ]);
+    statsY += 20;
+
+    // Projectile count stat
+    const projectileStatText = this.k.add([
+      this.k.text(`Projectiles: ${projectileCount}`, { size: 14 }),
+      this.k.color(200, 200, 200),
+      this.k.pos(statsX, statsY),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(110),
+    ]);
+    statsY += 20;
+
+    // Targeting zone radius stat
+    const zoneStatText = this.k.add([
+      this.k.text(`Range: ${targetingZoneRadius}`, { size: 14 }),
+      this.k.color(200, 200, 200),
+      this.k.pos(statsX, statsY),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(110),
+    ]);
+    statsY += 20;
+
+    // Fire rate stat
+    const fireRateStatText = this.k.add([
+      this.k.text(`Fire Rate: ${(1 / fireInterval).toFixed(1)}/s`, {
+        size: 14,
+      }),
+      this.k.color(200, 200, 200),
+      this.k.pos(statsX, statsY),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(110),
+    ]);
 
     // Spawn enemies periodically
     this.k.loop(enemySpawnInterval, () => {
@@ -200,7 +262,11 @@ export class Game {
     // Draw dotted circle in onUpdate
     const k = this.k; // Store reference for closure
     zoneCircle.onUpdate(() => {
-      // Draw dotted circle
+      // Update position to follow player
+      zoneCircle.pos.x = player.pos.x;
+      zoneCircle.pos.y = player.pos.y;
+
+      // Draw dotted circle with current radius
       const segments = 64; // Number of segments for smooth circle
       const dashLength = 5; // Length of each dash
       const gapLength = 3; // Length of gap between dashes
@@ -229,16 +295,14 @@ export class Game {
       }
     });
 
-    // Update zone circle position to follow player
-    zoneCircle.onUpdate(() => {
-      zoneCircle.pos.x = player.pos.x;
-      zoneCircle.pos.y = player.pos.y;
-    });
-
     // Auto-fire at closest enemy within zone
     let fireLoopController = player.loop(fireInterval, () => {
       if (!this.isPaused) {
-        this.autoFireAtClosestEnemy(player, targetingZoneRadius);
+        this.autoFireAtClosestEnemy(
+          player,
+          targetingZoneRadius,
+          projectileCount
+        );
       }
     });
 
@@ -271,35 +335,44 @@ export class Game {
       const leftPressed = this.k.isKeyDown("q");
       const rightPressed = this.k.isKeyDown("d");
 
-      // Prevent diagonal movement: prioritize vertical over horizontal
-      if (upPressed || downPressed) {
-        // Only allow vertical movement
-        if (upPressed) {
-          moveY -= moveSpeed;
-        }
-        if (downPressed) {
-          moveY += moveSpeed;
-        }
-      } else {
-        // Only allow horizontal movement if no vertical keys are pressed
-        if (leftPressed) {
-          moveX -= moveSpeed;
-        }
-        if (rightPressed) {
-          moveX += moveSpeed;
-        }
+      // Allow diagonal movement - combine both axes
+      if (upPressed) {
+        moveY -= 1;
+      }
+      if (downPressed) {
+        moveY += 1;
+      }
+      if (leftPressed) {
+        moveX -= 1;
+      }
+      if (rightPressed) {
+        moveX += 1;
       }
 
-      // Determine direction based on movement (no diagonal possible now)
+      // Normalize movement vector to maintain consistent speed in all directions
+      if (moveX !== 0 || moveY !== 0) {
+        const length = Math.sqrt(moveX * moveX + moveY * moveY);
+        // Normalize to unit vector, then scale by moveSpeed
+        moveX = (moveX / length) * moveSpeed;
+        moveY = (moveY / length) * moveSpeed;
+      }
+
+      // Determine direction based on movement (prioritize vertical, then horizontal)
       let newDirection: "up" | "down" | "left" | "right" = currentDirection;
-      if (moveY < 0) {
-        newDirection = "up";
-      } else if (moveY > 0) {
-        newDirection = "down";
-      } else if (moveX < 0) {
-        newDirection = "left";
-      } else if (moveX > 0) {
-        newDirection = "right";
+      if (Math.abs(moveY) > Math.abs(moveX)) {
+        // Vertical movement is dominant
+        if (moveY < 0) {
+          newDirection = "up";
+        } else if (moveY > 0) {
+          newDirection = "down";
+        }
+      } else {
+        // Horizontal movement is dominant or equal
+        if (moveX < 0) {
+          newDirection = "left";
+        } else if (moveX > 0) {
+          newDirection = "right";
+        }
       }
 
       const wasMoving = isMoving;
@@ -358,6 +431,12 @@ export class Game {
 
       // Update level display
       levelText.text = `Level: ${playerLevel}`;
+
+      // Update stats display
+      speedStatText.text = `Speed: ${Math.round(speed)}`;
+      projectileStatText.text = `Projectiles: ${projectileCount}`;
+      zoneStatText.text = `Range: ${targetingZoneRadius}`;
+      fireRateStatText.text = `Fire Rate: ${(1 / fireInterval).toFixed(1)}/s`;
     });
 
     // Handle player collision with enemies
@@ -429,11 +508,23 @@ export class Game {
               fireLoopController.cancel();
               fireLoopController = player.loop(fireInterval, () => {
                 if (!this.isPaused) {
-                  this.autoFireAtClosestEnemy(player, targetingZoneRadius);
+                  this.autoFireAtClosestEnemy(
+                    player,
+                    targetingZoneRadius,
+                    projectileCount
+                  );
                 }
               });
+            } else if (option === "projectileCount") {
+              // Increase projectile count
+              projectileCount += 1;
+            } else if (option === "movementSpeed") {
+              // Increase movement speed
+              speed = Math.round(speed * 1.2); // 20% faster
+            } else if (option === "targetingZone") {
+              // Increase targeting zone radius
+              targetingZoneRadius = Math.round(targetingZoneRadius * 1.3); // 30% larger
             }
-            // Other options will be added in the future
           }
         );
       }
@@ -486,8 +577,9 @@ export class Game {
     // Menu options
     const options = [
       { id: "fireSpeed", text: "Increase Fire Speed" },
-      { id: "placeholder1", text: "Coming Soon..." },
-      { id: "placeholder2", text: "Coming Soon..." },
+      { id: "projectileCount", text: "Increase Projectile Count" },
+      { id: "movementSpeed", text: "Increase Movement Speed" },
+      { id: "targetingZone", text: "Increase Targeting Range" },
     ];
 
     const optionHeight = 50;
@@ -496,7 +588,7 @@ export class Game {
 
     options.forEach((option, index) => {
       const optionY = startY + index * (optionHeight + optionSpacing);
-      const isEnabled = option.id === "fireSpeed";
+      const isEnabled = true; // All options are now enabled
 
       // Option background
       const optionBg = this.k.add([
@@ -623,7 +715,11 @@ export class Game {
     });
   }
 
-  private autoFireAtClosestEnemy(player: any, zoneRadius: number): void {
+  private autoFireAtClosestEnemy(
+    player: any,
+    zoneRadius: number,
+    projectileCount: number
+  ): void {
     // Find all enemies
     const enemies = this.k.get("enemy");
 
@@ -631,32 +727,38 @@ export class Game {
       return; // No enemies to target
     }
 
-    // Find closest enemy within zone
-    let closestEnemy: any = null;
-    let closestDistance = zoneRadius;
+    // Calculate distances to all enemies within zone and sort them
+    const enemiesInRange: Array<{ enemy: any; distance: number }> = [];
 
     for (const enemy of enemies) {
       const dx = enemy.pos.x - player.pos.x;
       const dy = enemy.pos.y - player.pos.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (distance <= zoneRadius && distance < closestDistance) {
-        closestDistance = distance;
-        closestEnemy = enemy;
+      if (distance <= zoneRadius) {
+        enemiesInRange.push({ enemy, distance });
       }
     }
 
-    // Fire at closest enemy if found
-    if (closestEnemy) {
-      const dx = closestEnemy.pos.x - player.pos.x;
-      const dy = closestEnemy.pos.y - player.pos.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+    // Sort enemies by distance (closest first)
+    enemiesInRange.sort((a, b) => a.distance - b.distance);
+
+    // Fire projectiles at the X closest enemies (where X is the minimum of projectileCount and enemiesInRange.length)
+    // Only fire as many projectiles as there are enemies in range
+    const targetsToFire = Math.min(projectileCount, enemiesInRange.length);
+
+    for (let i = 0; i < targetsToFire; i++) {
+      const target = enemiesInRange[i];
+      const dx = target.enemy.pos.x - player.pos.x;
+      const dy = target.enemy.pos.y - player.pos.y;
+      const distance = target.distance;
 
       if (distance > 0) {
         // Normalize direction
         const directionX = dx / distance;
         const directionY = dy / distance;
 
+        // Fire one projectile at this enemy
         this.fireProjectile(player.pos, directionX, directionY);
       }
     }
