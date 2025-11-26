@@ -6,7 +6,6 @@ export class Game {
   private isPaused = false;
   private enemiesKilled = 0;
   private pauseOverlay: any = null;
-  private rotatingBlade: any = null;
 
   constructor(container: HTMLElement) {
     const width = Math.min(window.innerWidth, 1200);
@@ -30,9 +29,6 @@ export class Game {
     const enemySize = 16; // size of enemy square
     let targetingZoneRadius = 150; // Configurable targeting zone radius (mutable for upgrades)
     let projectileCount = 1; // Number of projectiles fired at once (mutable for upgrades)
-    let hasRotatingBlade = false; // Track if player has blade weapon
-    let bladeRange = 40; // Range/distance in front of player (mutable for upgrades)
-    let bladeWidth = 30; // Width of triangle attack (mutable for upgrades)
 
     // Enemy scaling
     let enemySpawnController: any = null; // Controller for normal enemy spawn loop
@@ -403,11 +399,6 @@ export class Game {
         } else {
           player.play(`idle-${currentDirection}`);
         }
-
-        // Update blade direction if blade exists
-        if (hasRotatingBlade && this.rotatingBlade) {
-          (this.rotatingBlade as any).currentDirection = currentDirection;
-        }
       } else if (!isMoving && wasMoving) {
         player.play(`idle-${currentDirection}`);
       }
@@ -570,32 +561,8 @@ export class Game {
             } else if (option === "targetingZone") {
               // Increase targeting zone radius
               targetingZoneRadius = Math.round(targetingZoneRadius * 1.3); // 30% larger
-            } else if (option === "rotatingBlade") {
-              // Add blade weapon
-              if (!hasRotatingBlade) {
-                hasRotatingBlade = true;
-                this.createBlade(
-                  player,
-                  bladeRange,
-                  bladeWidth,
-                  currentDirection
-                );
-              }
-            } else if (option === "bladeSize") {
-              // Increase blade range
-              if (hasRotatingBlade && this.rotatingBlade) {
-                bladeRange = Math.round(bladeRange * 1.3); // 30% larger
-                (this.rotatingBlade as any).currentRange = bladeRange;
-              }
-            } else if (option === "bladeSpeed") {
-              // Increase blade width (attack area)
-              if (hasRotatingBlade && this.rotatingBlade) {
-                bladeWidth = Math.round(bladeWidth * 1.3); // 30% wider
-                (this.rotatingBlade as any).currentWidth = bladeWidth;
-              }
             }
-          },
-          hasRotatingBlade
+          }
         );
       }
     });
@@ -609,179 +576,9 @@ export class Game {
     });
   }
 
-  private createBlade(
-    player: any,
-    initialRange: number,
-    initialWidth: number,
-    initialDirection: "up" | "down" | "left" | "right"
-  ): void {
-    let currentRange = initialRange;
-    let currentWidth = initialWidth;
-    let currentDirection = initialDirection;
-
-    // Create blade as a triangle area in front of player
-    // Use a polygon shape for triangle collision
-    const bladeTriangle = this.k.add([
-      this.k.pos(player.pos.x, player.pos.y),
-      this.k.anchor("center"),
-      this.k.area({
-        shape: new this.k.Polygon([
-          this.k.vec2(0, 0),
-          this.k.vec2(-currentWidth / 2, currentRange),
-          this.k.vec2(currentWidth / 2, currentRange),
-        ]),
-      }),
-      this.k.opacity(0), // Invisible (just for collision)
-      this.k.z(40),
-      "rotatingBlade",
-    ]);
-
-    // Store references for upgrades
-    (bladeTriangle as any).currentRange = currentRange;
-    (bladeTriangle as any).currentWidth = currentWidth;
-    (bladeTriangle as any).currentDirection = currentDirection;
-    this.rotatingBlade = bladeTriangle;
-
-    // Update blade position and shape based on player direction
-    bladeTriangle.onUpdate(() => {
-      if (this.isPaused) {
-        return;
-      }
-
-      // Update range and width from upgrades (if changed)
-      if ((bladeTriangle as any).currentRange !== currentRange) {
-        currentRange = (bladeTriangle as any).currentRange;
-      }
-      if ((bladeTriangle as any).currentWidth !== currentWidth) {
-        currentWidth = (bladeTriangle as any).currentWidth;
-      }
-      if ((bladeTriangle as any).currentDirection !== currentDirection) {
-        currentDirection = (bladeTriangle as any).currentDirection;
-      }
-
-      // Calculate offset based on player direction
-      let offsetX = 0;
-      let offsetY = 0;
-
-      switch (currentDirection) {
-        case "up":
-          offsetY = -currentRange / 2;
-          break;
-        case "down":
-          offsetY = currentRange / 2;
-          break;
-        case "left":
-          offsetX = -currentRange / 2;
-          break;
-        case "right":
-          offsetX = currentRange / 2;
-          break;
-      }
-
-      // Update blade position to be in front of player
-      bladeTriangle.pos.x = player.pos.x + offsetX;
-      bladeTriangle.pos.y = player.pos.y + offsetY;
-
-      // Update triangle shape based on direction
-      const halfWidth = currentWidth / 2;
-      let trianglePoints: any[] = [];
-
-      switch (currentDirection) {
-        case "up":
-          trianglePoints = [
-            this.k.vec2(0, -currentRange / 2), // Tip (top)
-            this.k.vec2(-halfWidth, currentRange / 2), // Bottom left
-            this.k.vec2(halfWidth, currentRange / 2), // Bottom right
-          ];
-          break;
-        case "down":
-          trianglePoints = [
-            this.k.vec2(0, currentRange / 2), // Tip (bottom)
-            this.k.vec2(-halfWidth, -currentRange / 2), // Top left
-            this.k.vec2(halfWidth, -currentRange / 2), // Top right
-          ];
-          break;
-        case "left":
-          trianglePoints = [
-            this.k.vec2(-currentRange / 2, 0), // Tip (left)
-            this.k.vec2(currentRange / 2, -halfWidth), // Top right
-            this.k.vec2(currentRange / 2, halfWidth), // Bottom right
-          ];
-          break;
-        case "right":
-          trianglePoints = [
-            this.k.vec2(currentRange / 2, 0), // Tip (right)
-            this.k.vec2(-currentRange / 2, -halfWidth), // Top left
-            this.k.vec2(-currentRange / 2, halfWidth), // Bottom left
-          ];
-          break;
-      }
-
-      bladeTriangle.area.shape = new this.k.Polygon(trianglePoints);
-    });
-
-    // Handle collision with enemies
-    bladeTriangle.onCollide("enemy", (enemy: any) => {
-      // Reduce enemy health
-      if (!(enemy as any).health) {
-        (enemy as any).health = 1;
-      }
-      (enemy as any).health -= 1;
-
-      // Check if enemy is dead
-      if ((enemy as any).health <= 0) {
-        // Spawn XP point at enemy position
-        this.spawnXP(enemy.pos);
-
-        // Rare chance to spawn health point (10% chance)
-        if (Math.random() < 0.1) {
-          this.spawnHealthPoint(enemy.pos);
-        }
-
-        // Increment kill counter
-        this.enemiesKilled++;
-
-        // Destroy the enemy
-        enemy.destroy();
-      }
-    });
-  }
-
-  private createBladeSprite(): string {
-    // Create a blade sprite programmatically
-    const canvas = document.createElement("canvas");
-    canvas.width = 16;
-    canvas.height = 32;
-    const ctx = canvas.getContext("2d")!;
-
-    // Draw blade shape (sword-like)
-    // Blade body (silver/gray)
-    ctx.fillStyle = "#c0c0c0"; // Silver
-    ctx.beginPath();
-    ctx.moveTo(8, 0); // Tip
-    ctx.lineTo(6, 8); // Left edge
-    ctx.lineTo(10, 8); // Right edge
-    ctx.closePath();
-    ctx.fill();
-
-    // Blade body (wider part)
-    ctx.fillRect(5, 8, 6, 16);
-
-    // Blade handle (darker)
-    ctx.fillStyle = "#8b4513"; // Brown handle
-    ctx.fillRect(6, 24, 4, 8);
-
-    // Blade guard (cross guard)
-    ctx.fillStyle = "#a0a0a0"; // Darker silver
-    ctx.fillRect(2, 20, 12, 2);
-
-    return canvas.toDataURL();
-  }
-
   private showLevelUpMenu(
     onClose: () => void,
-    onSelect: (option: string) => void,
-    hasRotatingBlade: boolean = false
+    onSelect: (option: string) => void
   ): void {
     // Create semi-transparent overlay
     this.k.add([
@@ -797,7 +594,7 @@ export class Game {
 
     // Menu background
     const menuWidth = 400;
-    const menuHeight = 420; // Increased to fit 7 options
+    const menuHeight = 300; // Back to original size for 4 options
     const menuX = (this.k.width() - menuWidth) / 2;
     const menuY = (this.k.height() - menuHeight) / 2;
 
@@ -828,9 +625,6 @@ export class Game {
       { id: "projectileCount", text: "Increase Projectile Count" },
       { id: "movementSpeed", text: "Increase Movement Speed" },
       { id: "targetingZone", text: "Increase Targeting Range" },
-      { id: "rotatingBlade", text: "Blade Weapon" },
-      { id: "bladeSize", text: "Increase Blade Range" },
-      { id: "bladeSpeed", text: "Increase Blade Width" },
     ];
 
     const optionHeight = 50;
@@ -839,11 +633,7 @@ export class Game {
 
     options.forEach((option, index) => {
       const optionY = startY + index * (optionHeight + optionSpacing);
-      // Blade size and speed only enabled if blade is already unlocked
-      const isEnabled =
-        option.id === "bladeSize" || option.id === "bladeSpeed"
-          ? hasRotatingBlade
-          : true;
+      const isEnabled = true; // All options are enabled
 
       // Option background
       const optionBg = this.k.add([
