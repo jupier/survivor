@@ -22,6 +22,7 @@ export class Game {
     normalController: any;
     strongController: any;
     eliteController: any;
+    swarmController: any;
   } | null = null;
   private fireLoopController: any = null;
   private targetingZone: any = null;
@@ -42,10 +43,10 @@ export class Game {
     this.setupGame();
   }
 
-  private async setupGame(): Promise<void> {
-    const enemySpeed = 75; // pixels per second (reduced from 100 for better playability)
-    const enemySize = 24; // size of enemy sprite (24x24, scaled down from 32)
+  private enemySpeed = 75; // pixels per second (reduced from 100 for better playability)
+  private enemySize = 24; // size of enemy sprite (24x24, scaled down from 32)
 
+  private async setupGame(): Promise<void> {
     // Load all sprites
     await loadAllSprites(this.k);
 
@@ -90,8 +91,8 @@ export class Game {
     this.enemySpawnControllers = setupEnemySpawning(
       this.k,
       this.player,
-      enemySpeed,
-      enemySize,
+      this.enemySpeed,
+      this.enemySize,
       this.state.enemySpawnInterval,
       () => this.state.isPaused,
       () => ({
@@ -118,7 +119,7 @@ export class Game {
     });
 
     // Main game loop
-    this.setupGameLoop(enemySpeed, enemySize);
+    this.setupGameLoop();
   }
 
   private setupTargetingZone(): void {
@@ -214,7 +215,7 @@ export class Game {
     }
   }
 
-  private setupGameLoop(enemySpeed: number, enemySize: number): void {
+  private setupGameLoop(): void {
     this.k.onUpdate(() => {
       // Skip updates if game is paused
       if (this.state.isPaused) {
@@ -231,6 +232,38 @@ export class Game {
         // Increase enemy spawn rate every 15 seconds
         const gameTimeElapsed = 600 - this.state.gameTime;
         const spawnRateIncreaseInterval = 15;
+
+        // Start swarm enemy spawning after 90 seconds
+        if (
+          gameTimeElapsed >= 90 &&
+          this.enemySpawnControllers &&
+          !this.enemySpawnControllers.swarmController
+        ) {
+          const swarmSpawnInterval = this.state.enemySpawnInterval / 2; // Double the spawn rate
+          this.enemySpawnControllers.swarmController = this.k.loop(
+            swarmSpawnInterval,
+            () => {
+              if (!this.state.isPaused) {
+                spawnEnemy(
+                  this.k,
+                  this.player,
+                  this.enemySpeed,
+                  this.enemySize,
+                  false,
+                  false,
+                  true,
+                  () => this.state.isPaused,
+                  () => ({
+                    active: this.state.slowWeaponActive,
+                    effectPercentage: this.state.slowEffectPercentage,
+                    zoneRadius: this.state.targetingZoneRadius,
+                  })
+                );
+              }
+            }
+          );
+        }
+
         if (
           gameTimeElapsed - this.state.lastSpawnRateIncrease >=
           spawnRateIncreaseInterval
@@ -253,8 +286,9 @@ export class Game {
                   spawnEnemy(
                     this.k,
                     this.player,
-                    enemySpeed,
-                    enemySize,
+                    this.enemySpeed,
+                    this.enemySize,
+                    false,
                     false,
                     false,
                     () => this.state.isPaused,
@@ -278,9 +312,10 @@ export class Game {
                     spawnEnemy(
                       this.k,
                       this.player,
-                      enemySpeed,
-                      enemySize,
+                      this.enemySpeed,
+                      this.enemySize,
                       true,
+                      false,
                       false,
                       () => this.state.isPaused,
                       () => ({
@@ -304,8 +339,37 @@ export class Game {
                     spawnEnemy(
                       this.k,
                       this.player,
-                      enemySpeed,
-                      enemySize,
+                      this.enemySpeed,
+                      this.enemySize,
+                      false,
+                      true,
+                      false,
+                      () => this.state.isPaused,
+                      () => ({
+                        active: this.state.slowWeaponActive,
+                        effectPercentage: this.state.slowEffectPercentage,
+                        zoneRadius: this.state.targetingZoneRadius,
+                      })
+                    );
+                  }
+                }
+              );
+            }
+
+            // Swarm enemies (if they've started spawning)
+            if (this.enemySpawnControllers.swarmController) {
+              this.enemySpawnControllers.swarmController.cancel();
+              const swarmSpawnInterval = this.state.enemySpawnInterval / 2; // Double the spawn rate
+              this.enemySpawnControllers.swarmController = this.k.loop(
+                swarmSpawnInterval,
+                () => {
+                  if (!this.state.isPaused) {
+                    spawnEnemy(
+                      this.k,
+                      this.player,
+                      this.enemySpeed,
+                      this.enemySize,
+                      false,
                       false,
                       true,
                       () => this.state.isPaused,

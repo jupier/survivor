@@ -3,6 +3,7 @@ import {
   createNormalEnemySprite,
   createStrongEnemySprite,
   createEliteEnemySprite,
+  createSwarmEnemySprite,
 } from "../assets/create-enemy-sprites";
 import { createBackgroundPattern } from "../assets/create-background-sprite";
 import { createXPSprite } from "../assets/create-xp-sprite";
@@ -43,6 +44,9 @@ export async function loadAllSprites(
 
   const eliteEnemySpriteUrl = createEliteEnemySprite();
   await k.loadSprite("enemy-elite", eliteEnemySpriteUrl);
+
+  const swarmEnemySpriteUrl = createSwarmEnemySprite();
+  await k.loadSprite("enemy-swarm", swarmEnemySpriteUrl);
 
   // Load other sprites
   const backgroundPatternUrl = createBackgroundPattern();

@@ -64,6 +64,85 @@ export function createNormalEnemySprite(): string {
   ctx.moveTo(22, 4);
   ctx.lineTo(20, 8);
   ctx.lineTo(22, 8);
+      ctx.closePath();
+      ctx.fill();
+
+      return canvas.toDataURL();
+    }
+
+export function createSwarmEnemySprite(): string {
+  // Create a sprite for swarm enemy (smaller, faster-looking enemy, cyan/teal color)
+  const canvas = document.createElement("canvas");
+  canvas.width = 32;
+  canvas.height = 32;
+  const ctx = canvas.getContext("2d")!;
+
+  // Clear canvas
+  ctx.clearRect(0, 0, 32, 32);
+
+  // Monster body (cyan/teal, smaller and more compact)
+  ctx.fillStyle = "#06b6d4"; // Cyan
+  ctx.beginPath();
+  ctx.ellipse(16, 18, 8, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Monster head (lighter cyan)
+  ctx.fillStyle = "#67e8f9"; // Light cyan
+  ctx.beginPath();
+  ctx.ellipse(16, 10, 6, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyes (bright yellow, alert)
+  ctx.fillStyle = "#fbbf24"; // Yellow
+  ctx.beginPath();
+  ctx.arc(13, 9, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(19, 9, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eye pupils (black)
+  ctx.fillStyle = "#000000";
+  ctx.beginPath();
+  ctx.arc(13, 9, 0.8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(19, 9, 0.8, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Mouth (dark cyan, smaller)
+  ctx.fillStyle = "#0891b2"; // Dark cyan
+  ctx.beginPath();
+  ctx.ellipse(16, 13, 3, 2.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Small spikes on top (dark cyan)
+  ctx.fillStyle = "#0891b2";
+  ctx.beginPath();
+  ctx.moveTo(11, 4);
+  ctx.lineTo(12, 7);
+  ctx.lineTo(11, 7);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(21, 4);
+  ctx.lineTo(20, 7);
+  ctx.lineTo(21, 7);
+  ctx.closePath();
+  ctx.fill();
+
+  // Small wings/appendages on sides (for speed look)
+  ctx.fillStyle = "#06b6d4";
+  ctx.beginPath();
+  ctx.moveTo(6, 16);
+  ctx.lineTo(10, 14);
+  ctx.lineTo(10, 18);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(26, 16);
+  ctx.lineTo(22, 14);
+  ctx.lineTo(22, 18);
   ctx.closePath();
   ctx.fill();
 

@@ -5,6 +5,7 @@ export function spawnEnemy(
   enemySize: number,
   isStrongEnemy: boolean,
   isEliteEnemy: boolean = false,
+  isSwarmEnemy: boolean = false,
   isPaused: () => boolean = () => false,
   getSlowWeaponState: () => {
     active: boolean;
@@ -39,7 +40,10 @@ export function spawnEnemy(
   // Enemy type is determined by the parameters
   let enemyHealth: number;
   let enemySpriteName: string;
-  if (isEliteEnemy) {
+  if (isSwarmEnemy) {
+    enemyHealth = 1;
+    enemySpriteName = "enemy-swarm";
+  } else if (isEliteEnemy) {
     enemyHealth = 3;
     enemySpriteName = "enemy-elite";
   } else if (isStrongEnemy) {
@@ -196,6 +200,7 @@ export function setupEnemySpawning(
   normalController: any;
   strongController: any;
   eliteController: any;
+  swarmController: any;
 } {
   // Spawn normal enemies periodically (always active)
   let normalController = k.loop(spawnInterval, () => {
@@ -205,6 +210,7 @@ export function setupEnemySpawning(
         player,
         enemySpeed,
         enemySize,
+        false,
         false,
         false,
         isPaused,
@@ -225,6 +231,7 @@ export function setupEnemySpawning(
           enemySize,
           true,
           false,
+          false,
           isPaused,
           getSlowWeaponState
         ); // true = strong enemy (2 HP)
@@ -244,6 +251,7 @@ export function setupEnemySpawning(
           enemySize,
           false,
           true,
+          false,
           isPaused,
           getSlowWeaponState
         ); // elite enemy (3 HP)
@@ -251,9 +259,14 @@ export function setupEnemySpawning(
     });
   });
 
+  // Swarm enemies will be started from the game loop based on game time elapsed
+  // (handled in game.ts setupGameLoop)
+  const swarmController: any = null; // Will be set in game loop
+
   return {
     normalController,
     strongController,
     eliteController,
+    swarmController,
   };
 }
