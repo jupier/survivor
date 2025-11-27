@@ -49,3 +49,4 @@ export function createTargetingZoneSprite(): string {
   return canvas.toDataURL();
 }
 
+

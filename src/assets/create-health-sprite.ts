@@ -52,3 +52,4 @@ export function createHealthSprite(): string {
   return canvas.toDataURL();
 }
 
+

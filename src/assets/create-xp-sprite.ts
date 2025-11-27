@@ -52,3 +52,4 @@ export function createXPSprite(): string {
   return canvas.toDataURL();
 }
 
+
