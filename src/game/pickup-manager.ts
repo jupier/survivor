@@ -2,21 +2,22 @@ export function spawnXP(
   k: ReturnType<typeof import("kaplay").default>,
   position: { x: number; y: number }
 ): void {
-  // Create XP point with gem sprite
+  // Create XP point with gem sprite (scaled down to 75% of original size)
   const xp = k.add([
     k.sprite("xp"),
     k.pos(position.x, position.y),
     k.anchor("center"),
     k.area(),
-    k.scale(),
+    k.scale(0.75, 0.75), // Scale down to 75% (12px instead of 16px)
     "xp",
   ]);
 
-  // Add a pulsing animation
+  // Add a pulsing animation (relative to base scale of 0.75)
   xp.onUpdate(() => {
     // Simple pulsing effect
-    const scale = 1 + Math.sin(k.time() * 5) * 0.2;
-    xp.scale = k.vec2(scale, scale);
+    const baseScale = 0.75;
+    const pulseScale = baseScale + Math.sin(k.time() * 5) * 0.15;
+    xp.scale = k.vec2(pulseScale, pulseScale);
   });
 }
 
@@ -24,21 +25,22 @@ export function spawnHealthPoint(
   k: ReturnType<typeof import("kaplay").default>,
   position: { x: number; y: number }
 ): void {
-  // Create health point with heart sprite
+  // Create health point with heart sprite (scaled down to 75% of original size)
   const healthPoint = k.add([
     k.sprite("health"),
     k.pos(position.x, position.y),
     k.anchor("center"),
     k.area(),
-    k.scale(),
+    k.scale(0.75, 0.75), // Scale down to 75% (12px instead of 16px)
     "healthPoint",
   ]);
 
-  // Add a pulsing animation
+  // Add a pulsing animation (relative to base scale of 0.75)
   healthPoint.onUpdate(() => {
     // Simple pulsing effect
-    const scale = 1 + Math.sin(k.time() * 5) * 0.2;
-    healthPoint.scale = k.vec2(scale, scale);
+    const baseScale = 0.75;
+    const pulseScale = baseScale + Math.sin(k.time() * 5) * 0.15;
+    healthPoint.scale = k.vec2(pulseScale, pulseScale);
   });
 }
 

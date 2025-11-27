@@ -5,6 +5,10 @@ export interface GameState {
   projectileCount: number;
   targetingZoneRadius: number;
   projectileBounces: number;
+  
+  // Slow weapon (slows enemies in targeting zone)
+  slowWeaponActive: boolean;
+  slowEffectPercentage: number; // Percentage of speed reduction (0-100)
 
   // Player progression
   playerExperience: number;
@@ -30,6 +34,8 @@ export function createInitialGameState(): GameState {
     projectileCount: 1,
     targetingZoneRadius: 150,
     projectileBounces: 0,
+    slowWeaponActive: false,
+    slowEffectPercentage: 30, // 30% speed reduction by default
     playerExperience: 0,
     playerLevel: 1,
     maxExperience: 50,

@@ -5,7 +5,9 @@ export interface UIElements {
   timerText: any;
   killsText: any;
   expBar: any;
+  expCounterText: any;
   lifeBar: any;
+  healthCounterText: any;
   speedStatText: any;
   projectileStatText: any;
   zoneStatText: any;
@@ -85,6 +87,16 @@ export function createUI(
     k.fixed(),
     k.z(103),
   ]);
+
+  // Experience counter (right side of bar) - shows gems needed
+  const expCounterText = k.add([
+    k.text("0/5 gems", { size: 12 }),
+    k.color(200, 200, 200),
+    k.pos(uiPadding + barWidth - 5, currentY + barHeight / 2),
+    k.anchor("right"),
+    k.fixed(),
+    k.z(103),
+  ]);
   currentY += barHeight + barSpacing;
 
   // Life bar background (gray)
@@ -113,6 +125,16 @@ export function createUI(
     k.color(200, 200, 200),
     k.pos(uiPadding + 5, currentY + barHeight / 2),
     k.anchor("left"),
+    k.fixed(),
+    k.z(103),
+  ]);
+
+  // Health counter (right side of bar)
+  const healthCounterText = k.add([
+    k.text("2/2", { size: 12 }),
+    k.color(200, 200, 200),
+    k.pos(uiPadding + barWidth - 5, currentY + barHeight / 2),
+    k.anchor("right"),
     k.fixed(),
     k.z(103),
   ]);
@@ -193,7 +215,9 @@ export function createUI(
     timerText,
     killsText,
     expBar,
+    expCounterText,
     lifeBar,
+    healthCounterText,
     speedStatText,
     projectileStatText,
     zoneStatText,
@@ -217,10 +241,17 @@ export function updateUI(
   // Update experience bar
   const expPercentage = Math.min(state.playerExperience / state.maxExperience, 1);
   ui.expBar.width = barWidth * expPercentage;
+  
+  // Calculate gems: each gem gives 10 XP
+  const xpPerGem = 10;
+  const gemsCollected = Math.floor(state.playerExperience / xpPerGem);
+  const gemsNeeded = Math.ceil(state.maxExperience / xpPerGem);
+  ui.expCounterText.text = `${gemsCollected}/${gemsNeeded} gems`;
 
   // Update life bar
   const healthPercentage = Math.max(0, state.playerHealth / state.maxHealth);
   ui.lifeBar.width = barWidth * healthPercentage;
+  ui.healthCounterText.text = `${state.playerHealth}/${state.maxHealth}`;
 
   // Update kills counter
   ui.killsText.text = `Kills: ${state.enemiesKilled}`;

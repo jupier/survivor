@@ -7,19 +7,10 @@ import {
   setupPlayerMovement,
   setupPlayerCollisions,
 } from "./player-manager";
-import {
-  setupEnemySpawning,
-  spawnEnemy,
-} from "./enemy-manager";
-import {
-  autoFireAtClosestEnemy,
-} from "./projectile-manager";
+import { setupEnemySpawning, spawnEnemy } from "./enemy-manager";
+import { autoFireAtClosestEnemy } from "./projectile-manager";
 import { showLevelUpMenu } from "./level-up-manager";
-import {
-  showPauseMenu,
-  hidePauseMenu,
-  showDeathScreen,
-} from "./menu-manager";
+import { showPauseMenu, hidePauseMenu, showDeathScreen } from "./menu-manager";
 import { spawnXP, spawnHealthPoint } from "./pickup-manager";
 
 export class Game {
@@ -34,6 +25,7 @@ export class Game {
   } | null = null;
   private fireLoopController: any = null;
   private targetingZone: any = null;
+  private targetingZoneOverlay: any = null; // Blue overlay when slow weapon is active
 
   constructor(container: HTMLElement) {
     const width = Math.min(window.innerWidth, 1200);
@@ -51,8 +43,8 @@ export class Game {
   }
 
   private async setupGame(): Promise<void> {
-    const enemySpeed = 100; // pixels per second
-    const enemySize = 32; // size of enemy sprite (32x32)
+    const enemySpeed = 75; // pixels per second (reduced from 100 for better playability)
+    const enemySize = 24; // size of enemy sprite (24x24, scaled down from 32)
 
     // Load all sprites
     await loadAllSprites(this.k);
@@ -61,37 +53,38 @@ export class Game {
     createBackground(this.k);
 
     // Create player
-    this.player = createPlayer(this.k);
+    const playerData = createPlayer(this.k);
+    this.player = playerData.player;
 
     // Create UI
     this.ui = createUI(this.k);
 
     // Setup player movement
-    setupPlayerMovement(this.k, this.player, this.state.speed, () => this.state.isPaused);
-
-    // Setup player collisions
-    setupPlayerCollisions(
+    setupPlayerMovement(
       this.k,
       this.player,
-      this.state,
-      {
-        onHealthChange: (newHealth: number) => {
-          this.state.playerHealth = newHealth;
-        },
-        onExperienceGain: () => {
-          // Already handled in setupPlayerCollisions
-        },
-        onLevelUp: () => {
-          this.handleLevelUp();
-        },
-        onEnemyKilled: () => {
-          this.state.enemiesKilled++;
-        },
-        onDeath: () => {
-          this.handlePlayerDeath();
-        },
-      }
+      this.state.speed,
+      () => this.state.isPaused
     );
+
+    // Setup player collisions
+    setupPlayerCollisions(this.k, this.player, this.state, {
+      onHealthChange: (newHealth: number) => {
+        this.state.playerHealth = newHealth;
+      },
+      onExperienceGain: () => {
+        // Already handled in setupPlayerCollisions
+      },
+      onLevelUp: () => {
+        this.handleLevelUp();
+      },
+      onEnemyKilled: () => {
+        this.state.enemiesKilled++;
+      },
+      onDeath: () => {
+        this.handlePlayerDeath();
+      },
+    });
 
     // Setup enemy spawning
     this.enemySpawnControllers = setupEnemySpawning(
@@ -100,7 +93,12 @@ export class Game {
       enemySpeed,
       enemySize,
       this.state.enemySpawnInterval,
-      () => this.state.isPaused
+      () => this.state.isPaused,
+      () => ({
+        active: this.state.slowWeaponActive,
+        effectPercentage: this.state.slowEffectPercentage,
+        zoneRadius: this.state.targetingZoneRadius,
+      })
     );
 
     // Create targeting zone
@@ -136,6 +134,17 @@ export class Game {
       "targetingZone",
     ]);
 
+    // Create blue overlay circle for slow weapon (initially hidden)
+    this.targetingZoneOverlay = this.k.add([
+      this.k.circle(this.state.targetingZoneRadius),
+      this.k.color(100, 150, 255), // Blue color
+      this.k.pos(this.player.pos.x, this.player.pos.y),
+      this.k.anchor("center"),
+      this.k.z(49), // Just below the targeting zone sprite
+      this.k.opacity(0), // Initially invisible
+      "targetingZoneOverlay",
+    ]);
+
     // Update position and scale to follow player and match current radius
     this.targetingZone.onUpdate(() => {
       this.targetingZone.pos.x = this.player.pos.x;
@@ -143,6 +152,22 @@ export class Game {
       // Update scale if radius changes (from upgrades)
       const newScale = (this.state.targetingZoneRadius * 2) / baseSpriteSize;
       this.targetingZone.scale = this.k.vec2(newScale, newScale);
+
+      // Update overlay when slow weapon is active
+      if (this.state.slowWeaponActive) {
+        // Show blue overlay with low opacity
+        this.targetingZoneOverlay.opacity = 0.2;
+        this.targetingZoneOverlay.radius = this.state.targetingZoneRadius;
+        this.targetingZoneOverlay.pos.x = this.player.pos.x;
+        this.targetingZoneOverlay.pos.y = this.player.pos.y;
+        // Reduce white zone opacity
+        this.targetingZone.opacity = 0.3;
+      } else {
+        // Hide blue overlay
+        this.targetingZoneOverlay.opacity = 0;
+        // Normal white zone opacity
+        this.targetingZone.opacity = 0.5;
+      }
     });
   }
 
@@ -225,7 +250,20 @@ export class Game {
               this.state.enemySpawnInterval,
               () => {
                 if (!this.state.isPaused) {
-                  spawnEnemy(this.k, this.player, enemySpeed, enemySize, false, false, () => this.state.isPaused);
+                  spawnEnemy(
+                    this.k,
+                    this.player,
+                    enemySpeed,
+                    enemySize,
+                    false,
+                    false,
+                    () => this.state.isPaused,
+                    () => ({
+                      active: this.state.slowWeaponActive,
+                      effectPercentage: this.state.slowEffectPercentage,
+                      zoneRadius: this.state.targetingZoneRadius,
+                    })
+                  );
                 }
               }
             );
@@ -244,7 +282,12 @@ export class Game {
                       enemySize,
                       true,
                       false,
-                      () => this.state.isPaused
+                      () => this.state.isPaused,
+                      () => ({
+                        active: this.state.slowWeaponActive,
+                        effectPercentage: this.state.slowEffectPercentage,
+                        zoneRadius: this.state.targetingZoneRadius,
+                      })
                     );
                   }
                 }
@@ -265,7 +308,12 @@ export class Game {
                       enemySize,
                       false,
                       true,
-                      () => this.state.isPaused
+                      () => this.state.isPaused,
+                      () => ({
+                        active: this.state.slowWeaponActive,
+                        effectPercentage: this.state.slowEffectPercentage,
+                        zoneRadius: this.state.targetingZoneRadius,
+                      })
                     );
                   }
                 }
@@ -295,7 +343,10 @@ export class Game {
       (option: string) => {
         if (option === "fireSpeed") {
           // Increase fire speed (reduce interval)
-          this.state.fireInterval = Math.max(0.5, this.state.fireInterval * 0.7); // 30% faster
+          this.state.fireInterval = Math.max(
+            0.5,
+            this.state.fireInterval * 0.7
+          ); // 30% faster
           // Cancel old loop and start new one with updated interval
           this.fireLoopController.cancel();
           this.setupAutoFire();
@@ -313,8 +364,24 @@ export class Game {
         } else if (option === "projectileBounces") {
           // Increase projectile bounces
           this.state.projectileBounces += 1;
+        } else if (option === "slowWeapon") {
+          // Activate slow weapon
+          this.state.slowWeaponActive = true;
+        } else if (option === "slowEffect") {
+          // Increase slow effect (if weapon is active)
+          if (this.state.slowWeaponActive) {
+            this.state.slowEffectPercentage = Math.min(
+              80,
+              this.state.slowEffectPercentage + 10
+            ); // Increase by 10%, max 80%
+          }
+        } else if (option === "increaseHealth") {
+          // Increase max health and restore current health
+          this.state.maxHealth += 1;
+          this.state.playerHealth += 1; // Also restore health when increasing max
         }
-      }
+      },
+      this.state.slowWeaponActive
     );
   }
 

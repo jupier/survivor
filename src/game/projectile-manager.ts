@@ -69,17 +69,18 @@ export function fireProjectile(
   isPaused: () => boolean = () => false
 ): void {
   const projectileSpeed = 300; // pixels per second
-  const projectileSize = 8;
+  const projectileSize = 6; // Scaled down from 8
 
   // Calculate rotation angle in degrees (Kaplay uses degrees)
   const angle = Math.atan2(directionY, directionX) * (180 / Math.PI);
 
-  // Create projectile with sprite
+  // Create projectile with sprite (scaled down to 75% of original size)
   const projectile = k.add([
     k.sprite("projectile"),
     k.pos(startPos.x, startPos.y),
     k.anchor("center"),
     k.area(),
+    k.scale(0.75, 0.75), // Scale down to 75% (12px instead of 16px)
     k.rotate(angle), // Rotate projectile to face direction
     "projectile",
   ]);

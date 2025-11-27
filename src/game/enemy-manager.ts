@@ -5,7 +5,12 @@ export function spawnEnemy(
   enemySize: number,
   isStrongEnemy: boolean,
   isEliteEnemy: boolean = false,
-  isPaused: () => boolean = () => false
+  isPaused: () => boolean = () => false,
+  getSlowWeaponState: () => {
+    active: boolean;
+    effectPercentage: number;
+    zoneRadius: number;
+  } = () => ({ active: false, effectPercentage: 0, zoneRadius: 0 })
 ): void {
   // Spawn enemy at random position on the map edges
   const side = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
@@ -45,18 +50,35 @@ export function spawnEnemy(
     enemySpriteName = "enemy-normal";
   }
 
-  // Create enemy with sprite
+  // Create enemy with sprite (scaled down to 75% of original size)
   const enemy = k.add([
     k.sprite(enemySpriteName),
     k.pos(spawnX, spawnY),
     k.anchor("center"),
     k.area(),
+    k.scale(0.75, 0.75), // Scale down to 75% (24px instead of 32px)
+    k.z(45), // Ensure enemies are above background but below player
     "enemy",
   ]);
 
   // Add health tracking to enemy
   (enemy as any).health = enemyHealth;
   (enemy as any).maxHealth = enemyHealth;
+
+  // Create collision zone indicator (circle outline) - more discrete
+  const collisionRadius = enemySize / 2;
+  const collisionZone = k.add([
+    k.circle(collisionRadius),
+    k.outline(1, k.rgb(200, 100, 100)), // Lighter red outline, 1px width
+    k.pos(spawnX, spawnY),
+    k.anchor("center"),
+    k.z(40), // Below enemy sprite but above background
+    k.opacity(0.25), // More discrete - very low opacity
+    "enemyCollisionZone",
+  ]);
+
+  // Store collision zone reference on enemy for cleanup
+  (enemy as any).collisionZone = collisionZone;
 
   // Add health bar for enemies with more than 1 HP (strong and elite)
   if (enemyHealth > 1) {
@@ -95,8 +117,7 @@ export function spawnEnemy(
       healthBar.pos.x = enemy.pos.x;
       healthBar.pos.y = enemy.pos.y + healthBarOffset;
 
-      const healthPercentage =
-        (enemy as any).health / (enemy as any).maxHealth;
+      const healthPercentage = (enemy as any).health / (enemy as any).maxHealth;
       healthBar.width = healthBarWidth * healthPercentage;
     });
 
@@ -108,6 +129,17 @@ export function spawnEnemy(
       if ((enemy as any).healthBar) {
         (enemy as any).healthBar.destroy();
       }
+      // Also clean up collision zone
+      if ((enemy as any).collisionZone) {
+        (enemy as any).collisionZone.destroy();
+      }
+    });
+  } else {
+    // For enemies with 1 HP, still need to clean up collision zone
+    enemy.onDestroy(() => {
+      if ((enemy as any).collisionZone) {
+        (enemy as any).collisionZone.destroy();
+      }
     });
   }
 
@@ -118,15 +150,30 @@ export function spawnEnemy(
       return;
     }
 
+    // Update collision zone position to follow enemy
+    if ((enemy as any).collisionZone) {
+      (enemy as any).collisionZone.pos.x = enemy.pos.x;
+      (enemy as any).collisionZone.pos.y = enemy.pos.y;
+    }
+
     // Calculate direction to player
     const dx = player.pos.x - enemy.pos.x;
     const dy = player.pos.y - enemy.pos.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
+    // Check if slow weapon is active and enemy is in targeting zone
+    let currentSpeed = enemySpeed;
+    const slowWeaponState = getSlowWeaponState();
+    if (slowWeaponState.active && distance <= slowWeaponState.zoneRadius) {
+      // Apply slow effect: reduce speed by percentage
+      const speedMultiplier = 1 - slowWeaponState.effectPercentage / 100;
+      currentSpeed = enemySpeed * speedMultiplier;
+    }
+
     // Normalize direction and move towards player
     if (distance > 0) {
-      const moveX = (dx / distance) * enemySpeed * k.dt();
-      const moveY = (dy / distance) * enemySpeed * k.dt();
+      const moveX = (dx / distance) * currentSpeed * k.dt();
+      const moveY = (dy / distance) * currentSpeed * k.dt();
       enemy.pos.x += moveX;
       enemy.pos.y += moveY;
     }
@@ -139,7 +186,12 @@ export function setupEnemySpawning(
   enemySpeed: number,
   enemySize: number,
   spawnInterval: number,
-  isPaused: () => boolean
+  isPaused: () => boolean,
+  getSlowWeaponState: () => {
+    active: boolean;
+    effectPercentage: number;
+    zoneRadius: number;
+  } = () => ({ active: false, effectPercentage: 0, zoneRadius: 0 })
 ): {
   normalController: any;
   strongController: any;
@@ -148,7 +200,16 @@ export function setupEnemySpawning(
   // Spawn normal enemies periodically (always active)
   let normalController = k.loop(spawnInterval, () => {
     if (!isPaused()) {
-      spawnEnemy(k, player, enemySpeed, enemySize, false, false, isPaused);
+      spawnEnemy(
+        k,
+        player,
+        enemySpeed,
+        enemySize,
+        false,
+        false,
+        isPaused,
+        getSlowWeaponState
+      );
     }
   });
 
@@ -157,7 +218,16 @@ export function setupEnemySpawning(
   k.wait(30, () => {
     strongController = k.loop(spawnInterval, () => {
       if (!isPaused()) {
-        spawnEnemy(k, player, enemySpeed, enemySize, true, false, isPaused); // true = strong enemy (2 HP)
+        spawnEnemy(
+          k,
+          player,
+          enemySpeed,
+          enemySize,
+          true,
+          false,
+          isPaused,
+          getSlowWeaponState
+        ); // true = strong enemy (2 HP)
       }
     });
   });
@@ -167,7 +237,16 @@ export function setupEnemySpawning(
   k.wait(60, () => {
     eliteController = k.loop(spawnInterval, () => {
       if (!isPaused()) {
-        spawnEnemy(k, player, enemySpeed, enemySize, false, true, isPaused); // elite enemy (3 HP)
+        spawnEnemy(
+          k,
+          player,
+          enemySpeed,
+          enemySize,
+          false,
+          true,
+          isPaused,
+          getSlowWeaponState
+        ); // elite enemy (3 HP)
       }
     });
   });
@@ -178,4 +257,3 @@ export function setupEnemySpawning(
     eliteController,
   };
 }
-

@@ -1,13 +1,14 @@
-export function createPlayer(
-  k: ReturnType<typeof import("kaplay").default>
-): any {
+export function createPlayer(k: ReturnType<typeof import("kaplay").default>): {
+  player: any;
+  collisionZone: any;
+} {
   const player = k.add([
     k.sprite("player"),
     k.pos(k.width() / 2, k.height() / 2),
     k.anchor("center"),
     k.area(),
     k.opacity(1),
-    k.scale(),
+    k.scale(0.75, 0.75), // Scale down to 75% (24px instead of 32px)
     k.timer(),
     "player",
   ]);
@@ -15,7 +16,26 @@ export function createPlayer(
   // Start with idle animation facing down
   player.play("idle-down");
 
-  return player;
+  // Create collision zone indicator for player (circle outline)
+  const playerSize = 24; // Approximate player sprite size (scaled down from 32)
+  const collisionRadius = playerSize / 2;
+  const collisionZone = k.add([
+    k.circle(collisionRadius),
+    k.outline(1, k.rgb(100, 150, 255)), // Blue outline, 1px width
+    k.pos(k.width() / 2, k.height() / 2),
+    k.anchor("center"),
+    k.z(40), // Below player sprite but above background
+    k.opacity(0.25), // Discrete - low opacity
+    "playerCollisionZone",
+  ]);
+
+  // Update collision zone position to follow player
+  player.onUpdate(() => {
+    collisionZone.pos.x = player.pos.x;
+    collisionZone.pos.y = player.pos.y;
+  });
+
+  return { player, collisionZone };
 }
 
 export function setupPlayerMovement(
@@ -188,6 +208,9 @@ export function setupPlayerCollisions(
     if (state.playerExperience >= state.maxExperience) {
       state.playerExperience = 0; // Reset XP
       state.playerLevel++;
+      // Scale XP requirements with level: base 50 + (level - 1) * 15
+      // Level 1: 50 XP, Level 2: 65 XP, Level 3: 80 XP, etc.
+      state.maxExperience = 50 + (state.playerLevel - 1) * 15;
       callbacks.onLevelUp();
     }
   });
@@ -201,4 +224,3 @@ export function setupPlayerCollisions(
     healthPoint.destroy();
   });
 }
-

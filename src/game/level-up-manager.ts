@@ -1,7 +1,8 @@
 export function showLevelUpMenu(
   k: ReturnType<typeof import("kaplay").default>,
   onClose: () => void,
-  onSelect: (option: string) => void
+  onSelect: (option: string) => void,
+  isSlowWeaponActive: boolean = false
 ): void {
   // Create semi-transparent overlay
   k.add([
@@ -15,9 +16,29 @@ export function showLevelUpMenu(
     "levelUpMenu",
   ]);
 
-  // Menu background
+  // Menu options (filter out slow weapon activation if already active)
+  const allOptions = [
+    { id: "fireSpeed", text: "Increase Fire Speed" },
+    { id: "projectileCount", text: "Increase Projectile Count" },
+    { id: "movementSpeed", text: "Increase Movement Speed" },
+    { id: "targetingZone", text: "Increase Targeting Range" },
+    { id: "projectileBounces", text: "Add Projectile Bounce" },
+    { id: "slowWeapon", text: "Activate Slow Weapon" },
+    { id: "slowEffect", text: "Increase Slow Effect" },
+    { id: "increaseHealth", text: "Increase Max Health" },
+  ];
+  
+  // Filter out slow weapon activation if already active
+  const options = allOptions.filter(
+    (opt) => opt.id !== "slowWeapon" || !isSlowWeaponActive
+  );
+
+  // Menu background (height adjusts based on number of options)
   const menuWidth = 400;
-  const menuHeight = 350; // Increased for 5 options
+  const baseMenuHeight = 350;
+  const optionHeight = 50;
+  const optionSpacing = 10;
+  const menuHeight = baseMenuHeight + Math.max(0, (options.length - 5) * (optionHeight + optionSpacing));
   const menuX = (k.width() - menuWidth) / 2;
   const menuY = (k.height() - menuHeight) / 2;
 
@@ -42,22 +63,13 @@ export function showLevelUpMenu(
     "levelUpMenu",
   ]);
 
-  // Menu options
-  const options = [
-    { id: "fireSpeed", text: "Increase Fire Speed" },
-    { id: "projectileCount", text: "Increase Projectile Count" },
-    { id: "movementSpeed", text: "Increase Movement Speed" },
-    { id: "targetingZone", text: "Increase Targeting Range" },
-    { id: "projectileBounces", text: "Add Projectile Bounce" },
-  ];
-
-  const optionHeight = 50;
-  const optionSpacing = 10;
   const startY = menuY + 100;
 
   options.forEach((option, index) => {
     const optionY = startY + index * (optionHeight + optionSpacing);
-    const isEnabled = true; // All options are enabled
+    // Disable slow effect upgrade if slow weapon is not active
+    const isEnabled =
+      option.id === "slowEffect" ? isSlowWeaponActive : true;
 
     // Option background
     const optionBg = k.add([
