@@ -4,11 +4,14 @@ export interface GameState {
   fireInterval: number;
   projectileCount: number;
   targetingZoneRadius: number;
-  projectileBounces: number;
   
   // Slow weapon (slows enemies in targeting zone)
   slowWeaponActive: boolean;
   slowEffectPercentage: number; // Percentage of speed reduction (0-100)
+
+  // AOE weapon (hits all enemies in targeting zone)
+  aoeWeaponActive: boolean;
+  aoeWeaponCooldown: number; // Cooldown between attacks (in seconds)
 
   // Player progression
   playerExperience: number;
@@ -32,10 +35,11 @@ export function createInitialGameState(): GameState {
     speed: 120,
     fireInterval: 1,
     projectileCount: 1,
-    targetingZoneRadius: 150,
-    projectileBounces: 0,
+    targetingZoneRadius: 100,
     slowWeaponActive: false,
     slowEffectPercentage: 30, // 30% speed reduction by default
+    aoeWeaponActive: false,
+    aoeWeaponCooldown: 1.5, // Cooldown between AOE attacks (1.5 seconds)
     playerExperience: 0,
     playerLevel: 1,
     maxExperience: 50,

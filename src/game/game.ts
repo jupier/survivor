@@ -9,6 +9,7 @@ import {
 } from "./player-manager";
 import { setupEnemySpawning, spawnEnemy } from "./enemy-manager";
 import { autoFireAtClosestEnemy } from "./projectile-manager";
+import { setupAOEWeapon } from "./aoe-weapon-manager";
 import { showLevelUpMenu } from "./level-up-manager";
 import { showPauseMenu, hidePauseMenu, showDeathScreen } from "./menu-manager";
 import { spawnXP, spawnHealthPoint } from "./pickup-manager";
@@ -27,6 +28,8 @@ export class Game {
   private fireLoopController: any = null;
   private targetingZone: any = null;
   private targetingZoneOverlay: any = null; // Blue overlay when slow weapon is active
+  private aoeZoneOverlay: any = null; // Orange overlay when AOE weapon is active
+  private aoeWeapon: { update: () => void; triggerAnimation: () => void } | null = null;
 
   constructor(container: HTMLElement) {
     const width = Math.min(window.innerWidth, 1200);
@@ -43,7 +46,7 @@ export class Game {
     this.setupGame();
   }
 
-  private enemySpeed = 75; // pixels per second (reduced from 100 for better playability)
+  private enemySpeed = 60; // pixels per second (reduced for better playability)
   private enemySize = 24; // size of enemy sprite (24x24, scaled down from 32)
 
   private async setupGame(): Promise<void> {
@@ -108,6 +111,25 @@ export class Game {
     // Setup auto-fire
     this.setupAutoFire();
 
+    // Setup AOE weapon
+    this.aoeWeapon = setupAOEWeapon(
+      this.k,
+      this.player,
+      () => ({
+        aoeWeaponActive: this.state.aoeWeaponActive,
+        aoeWeaponCooldown: this.state.aoeWeaponCooldown,
+        targetingZoneRadius: this.state.targetingZoneRadius,
+        isPaused: this.state.isPaused,
+      }),
+      (enemy: any) => {
+        this.handleEnemyHit(enemy);
+      },
+      () => {
+        // Trigger animation when AOE weapon hits
+        this.animateAOEHit();
+      }
+    );
+
     // Handle ESC key to pause/unpause
     this.k.onKeyPress("escape", () => {
       this.state.isPaused = !this.state.isPaused;
@@ -146,6 +168,17 @@ export class Game {
       "targetingZoneOverlay",
     ]);
 
+    // Create orange overlay circle for AOE weapon (initially hidden)
+    this.aoeZoneOverlay = this.k.add([
+      this.k.circle(this.state.targetingZoneRadius),
+      this.k.color(255, 165, 0), // Orange color
+      this.k.pos(this.player.pos.x, this.player.pos.y),
+      this.k.anchor("center"),
+      this.k.z(48), // Just below the blue overlay
+      this.k.opacity(0), // Initially invisible
+      "aoeZoneOverlay",
+    ]);
+
     // Update position and scale to follow player and match current radius
     this.targetingZone.onUpdate(() => {
       this.targetingZone.pos.x = this.player.pos.x;
@@ -154,18 +187,36 @@ export class Game {
       const newScale = (this.state.targetingZoneRadius * 2) / baseSpriteSize;
       this.targetingZone.scale = this.k.vec2(newScale, newScale);
 
-      // Update overlay when slow weapon is active
-      if (this.state.slowWeaponActive) {
-        // Show blue overlay with low opacity
+      // Update overlay based on active weapons
+      if (this.state.aoeWeaponActive) {
+        // Show orange overlay for AOE weapon
+        this.aoeZoneOverlay.opacity = 0.15;
+        this.aoeZoneOverlay.radius = this.state.targetingZoneRadius;
+        this.aoeZoneOverlay.pos.x = this.player.pos.x;
+        this.aoeZoneOverlay.pos.y = this.player.pos.y;
+        // Hide blue overlay
+        this.targetingZoneOverlay.opacity = 0;
+        // Reduce white zone opacity
+        this.targetingZone.opacity = 0.3;
+      } else if (this.state.slowWeaponActive) {
+        // Show blue overlay for slow weapon
         this.targetingZoneOverlay.opacity = 0.2;
         this.targetingZoneOverlay.radius = this.state.targetingZoneRadius;
         this.targetingZoneOverlay.pos.x = this.player.pos.x;
         this.targetingZoneOverlay.pos.y = this.player.pos.y;
+        // Hide orange overlay
+        this.aoeZoneOverlay.opacity = 0;
+        this.aoeZoneOverlay.pos.x = this.player.pos.x;
+        this.aoeZoneOverlay.pos.y = this.player.pos.y;
         // Reduce white zone opacity
         this.targetingZone.opacity = 0.3;
       } else {
-        // Hide blue overlay
+        // Hide both overlays
         this.targetingZoneOverlay.opacity = 0;
+        this.aoeZoneOverlay.opacity = 0;
+        // Update positions even when hidden
+        this.aoeZoneOverlay.pos.x = this.player.pos.x;
+        this.aoeZoneOverlay.pos.y = this.player.pos.y;
         // Normal white zone opacity
         this.targetingZone.opacity = 0.5;
       }
@@ -180,7 +231,6 @@ export class Game {
           this.player,
           this.state.targetingZoneRadius,
           this.state.projectileCount,
-          this.state.projectileBounces,
           (enemy: any) => {
             this.handleEnemyHit(enemy);
           },
@@ -220,6 +270,11 @@ export class Game {
       // Skip updates if game is paused
       if (this.state.isPaused) {
         return;
+      }
+
+      // Update AOE weapon
+      if (this.aoeWeapon) {
+        this.aoeWeapon.update();
       }
 
       // Update timer
@@ -425,9 +480,6 @@ export class Game {
           this.state.targetingZoneRadius = Math.round(
             this.state.targetingZoneRadius * 1.3
           ); // 30% larger
-        } else if (option === "projectileBounces") {
-          // Increase projectile bounces
-          this.state.projectileBounces += 1;
         } else if (option === "slowWeapon") {
           // Activate slow weapon
           this.state.slowWeaponActive = true;
@@ -443,9 +495,54 @@ export class Game {
           // Increase max health and restore current health
           this.state.maxHealth += 1;
           this.state.playerHealth += 1; // Also restore health when increasing max
+        } else if (option === "aoeWeapon") {
+          // Activate AOE weapon
+          this.state.aoeWeaponActive = true;
+        } else if (option === "aoeSpeed") {
+          // Reduce AOE cooldown (increase attack speed)
+          this.state.aoeWeaponCooldown = Math.max(
+            0.5,
+            this.state.aoeWeaponCooldown * 0.8
+          ); // 20% faster
         }
       },
-      this.state.slowWeaponActive
+      this.state.slowWeaponActive,
+      this.state.aoeWeaponActive
+    );
+  }
+
+  private animateAOEHit(): void {
+    if (!this.aoeZoneOverlay) {
+      return;
+    }
+
+    // Create a pulse animation: scale up and fade out
+    const originalRadius = this.state.targetingZoneRadius;
+    const originalOpacity = this.aoeZoneOverlay.opacity;
+    
+    // Pulse effect: scale up to 1.2x and increase opacity, then return
+    this.k.tween(
+      this.aoeZoneOverlay.radius,
+      originalRadius * 1.2,
+      0.1,
+      (val) => {
+        this.aoeZoneOverlay.radius = val;
+        this.aoeZoneOverlay.opacity = Math.min(0.8, originalOpacity + 0.3);
+      },
+      this.k.easings.easeOutQuad,
+      () => {
+        // Return to original size and opacity
+        this.k.tween(
+          this.aoeZoneOverlay.radius,
+          originalRadius,
+          0.2,
+          (val) => {
+            this.aoeZoneOverlay.radius = val;
+            this.aoeZoneOverlay.opacity = originalOpacity;
+          },
+          this.k.easings.easeInQuad
+        );
+      }
     );
   }
 

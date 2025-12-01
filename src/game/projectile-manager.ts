@@ -3,7 +3,6 @@ export function autoFireAtClosestEnemy(
   player: any,
   zoneRadius: number,
   projectileCount: number,
-  projectileBounces: number,
   onEnemyHit: (enemy: any) => void,
   isPaused: () => boolean = () => false
 ): void {
@@ -51,7 +50,6 @@ export function autoFireAtClosestEnemy(
         player.pos,
         directionX,
         directionY,
-        projectileBounces,
         onEnemyHit,
         isPaused
       );
@@ -64,7 +62,6 @@ export function fireProjectile(
   startPos: { x: number; y: number },
   directionX: number,
   directionY: number,
-  bouncesRemaining: number = 0,
   onEnemyHit: (enemy: any) => void,
   isPaused: () => boolean = () => false
 ): void {
@@ -85,11 +82,10 @@ export function fireProjectile(
     "projectile",
   ]);
 
-  // Store bounce count on projectile
-  (projectile as any).bouncesRemaining = bouncesRemaining;
+  // Store direction and track hit enemies
   (projectile as any).directionX = directionX;
   (projectile as any).directionY = directionY;
-  (projectile as any).hitEnemies = new Set(); // Track enemies already hit to avoid bouncing to same enemy
+  (projectile as any).hitEnemies = new Set(); // Track enemies already hit
 
   // Handle collision with enemies
   projectile.onCollide("enemy", (enemy: any) => {
@@ -104,58 +100,8 @@ export function fireProjectile(
     // Call the callback to handle enemy hit
     onEnemyHit(enemy);
 
-    // Check if projectile should bounce
-    if ((projectile as any).bouncesRemaining > 0) {
-      // Find nearest enemy that hasn't been hit
-      const allEnemies = k.get("enemy");
-      let nearestEnemy: any = null;
-      let nearestDistance = Infinity;
-
-      for (const otherEnemy of allEnemies) {
-        // Skip if already hit or if it's the same enemy
-        if (
-          (projectile as any).hitEnemies.has(otherEnemy) ||
-          otherEnemy === enemy
-        ) {
-          continue;
-        }
-
-        const dx = otherEnemy.pos.x - projectile.pos.x;
-        const dy = otherEnemy.pos.y - projectile.pos.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
-          nearestEnemy = otherEnemy;
-        }
-      }
-
-      // If we found a target, bounce to it
-      if (nearestEnemy) {
-        const dx = nearestEnemy.pos.x - projectile.pos.x;
-        const dy = nearestEnemy.pos.y - projectile.pos.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance > 0) {
-          const newDirectionX = dx / distance;
-          const newDirectionY = dy / distance;
-          const newAngle =
-            Math.atan2(newDirectionY, newDirectionX) * (180 / Math.PI);
-
-          // Update projectile direction and rotation
-          (projectile as any).directionX = newDirectionX;
-          (projectile as any).directionY = newDirectionY;
-          (projectile as any).bouncesRemaining -= 1;
-          projectile.angle = newAngle;
-        }
-      } else {
-        // No more enemies to bounce to, destroy projectile
-        projectile.destroy();
-      }
-    } else {
-      // No bounces remaining, destroy projectile
-      projectile.destroy();
-    }
+    // Destroy projectile on hit (no bounces)
+    projectile.destroy();
   });
 
   // Move projectile in the direction it's traveling
@@ -165,7 +111,7 @@ export function fireProjectile(
       return;
     }
 
-    // Use stored direction (may change on bounce)
+    // Use stored direction
     const currentDirX = (projectile as any).directionX || directionX;
     const currentDirY = (projectile as any).directionY || directionY;
 

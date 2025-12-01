@@ -1,8 +1,15 @@
+// Helper function to randomly select N items from an array
+function randomSelect<T>(array: T[], count: number): T[] {
+  const shuffled = [...array].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(count, array.length));
+}
+
 export function showLevelUpMenu(
   k: ReturnType<typeof import("kaplay").default>,
   onClose: () => void,
   onSelect: (option: string) => void,
-  isSlowWeaponActive: boolean = false
+  isSlowWeaponActive: boolean = false,
+  isAOEWeaponActive: boolean = false
 ): void {
   // Create semi-transparent overlay
   k.add([
@@ -16,29 +23,51 @@ export function showLevelUpMenu(
     "levelUpMenu",
   ]);
 
-  // Menu options (filter out slow weapon activation if already active)
+  // Menu options
   const allOptions = [
     { id: "fireSpeed", text: "Increase Fire Speed" },
     { id: "projectileCount", text: "Increase Projectile Count" },
     { id: "movementSpeed", text: "Increase Movement Speed" },
     { id: "targetingZone", text: "Increase Targeting Range" },
-    { id: "projectileBounces", text: "Add Projectile Bounce" },
     { id: "slowWeapon", text: "Activate Slow Weapon" },
     { id: "slowEffect", text: "Increase Slow Effect" },
+    { id: "aoeWeapon", text: "Activate AOE Weapon" },
+    { id: "aoeSpeed", text: "Increase AOE Speed" },
     { id: "increaseHealth", text: "Increase Max Health" },
   ];
   
-  // Filter out slow weapon activation if already active
-  const options = allOptions.filter(
-    (opt) => opt.id !== "slowWeapon" || !isSlowWeaponActive
+  // Filter out options based on weapon states:
+  // - Remove "slowWeapon" if already active
+  // - Remove "slowEffect" if slow weapon is not active
+  // - Remove "aoeWeapon" if already active
+  // - Remove "aoeSpeed" if AOE weapon is not active
+  const filteredOptions = allOptions.filter(
+    (opt) => {
+      if (opt.id === "slowWeapon") {
+        return !isSlowWeaponActive; // Only show if not already active
+      }
+      if (opt.id === "slowEffect") {
+        return isSlowWeaponActive; // Only show if slow weapon is active
+      }
+      if (opt.id === "aoeWeapon") {
+        return !isAOEWeaponActive; // Only show if not already active
+      }
+      if (opt.id === "aoeSpeed") {
+        return isAOEWeaponActive; // Only show if AOE weapon is active
+      }
+      return true; // Show all other options
+    }
   );
 
-  // Menu background (height adjusts based on number of options)
+  // Randomly select 3 options from the filtered list
+  const options = randomSelect(filteredOptions, 3);
+
+  // Menu background (height fixed for 3 options)
   const menuWidth = 400;
   const baseMenuHeight = 350;
   const optionHeight = 50;
   const optionSpacing = 10;
-  const menuHeight = baseMenuHeight + Math.max(0, (options.length - 5) * (optionHeight + optionSpacing));
+  const menuHeight = baseMenuHeight; // Fixed height for 3 options
   const menuX = (k.width() - menuWidth) / 2;
   const menuY = (k.height() - menuHeight) / 2;
 
@@ -67,9 +96,8 @@ export function showLevelUpMenu(
 
   options.forEach((option, index) => {
     const optionY = startY + index * (optionHeight + optionSpacing);
-    // Disable slow effect upgrade if slow weapon is not active
-    const isEnabled =
-      option.id === "slowEffect" ? isSlowWeaponActive : true;
+    // All options shown are enabled (slowEffect is filtered out if weapon not active)
+    const isEnabled = true;
 
     // Option background
     const optionBg = k.add([

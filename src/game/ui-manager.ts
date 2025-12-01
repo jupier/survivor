@@ -12,7 +12,6 @@ export interface UIElements {
   projectileStatText: any;
   zoneStatText: any;
   fireRateStatText: any;
-  bounceStatText: any;
 }
 
 export function createUI(
@@ -199,17 +198,6 @@ export function createUI(
   ]);
   statsY += 20;
 
-  // Projectile bounces stat
-  const bounceStatText = k.add([
-    k.text(`Bounces: 0`, { size: 14 }),
-    k.color(200, 200, 200),
-    k.pos(statsX, statsY),
-    k.anchor("topleft"),
-    k.fixed(),
-    k.z(110),
-  ]);
-  statsY += 20;
-
   return {
     levelText,
     timerText,
@@ -222,7 +210,6 @@ export function createUI(
     projectileStatText,
     zoneStatText,
     fireRateStatText,
-    bounceStatText,
   };
 }
 
@@ -264,6 +251,5 @@ export function updateUI(
   ui.projectileStatText.text = `Projectiles: ${state.projectileCount}`;
   ui.zoneStatText.text = `Range: ${state.targetingZoneRadius}`;
   ui.fireRateStatText.text = `Fire Rate: ${(1 / state.fireInterval).toFixed(1)}/s`;
-  ui.bounceStatText.text = `Bounces: ${state.projectileBounces}`;
 }
 
