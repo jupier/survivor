@@ -184,8 +184,6 @@ export class Game {
 
     // Update position and scale to follow player and match current radius
     // Cache values to avoid recalculating every frame
-    let lastPlayerX = this.player.pos.x;
-    let lastPlayerY = this.player.pos.y;
     let lastRadius = this.state.targetingZoneRadius;
     let lastAOEActive = this.state.aoeWeaponActive;
     let lastSlowActive = this.state.slowWeaponActive;
@@ -206,9 +204,6 @@ export class Game {
       this.targetingZoneOverlay.pos.y = currentY;
       this.aoeZoneOverlay.pos.x = currentX;
       this.aoeZoneOverlay.pos.y = currentY;
-
-      lastPlayerX = currentX;
-      lastPlayerY = currentY;
 
       // Only update scale if radius changed
       if (currentRadius !== lastRadius) {
