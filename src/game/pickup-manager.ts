@@ -3,6 +3,7 @@ export function spawnXP(
   position: { x: number; y: number }
 ): void {
   // Create XP point with gem sprite (scaled down to 75% of original size)
+  // No animation for performance
   const xp = k.add([
     k.sprite("xp"),
     k.pos(position.x, position.y),
@@ -11,14 +12,6 @@ export function spawnXP(
     k.scale(0.75, 0.75), // Scale down to 75% (12px instead of 16px)
     "xp",
   ]);
-
-  // Add a pulsing animation (relative to base scale of 0.75)
-  xp.onUpdate(() => {
-    // Simple pulsing effect
-    const baseScale = 0.75;
-    const pulseScale = baseScale + Math.sin(k.time() * 5) * 0.15;
-    xp.scale = k.vec2(pulseScale, pulseScale);
-  });
 }
 
 export function spawnHealthPoint(
@@ -43,4 +36,3 @@ export function spawnHealthPoint(
     healthPoint.scale = k.vec2(pulseScale, pulseScale);
   });
 }
-

@@ -34,19 +34,22 @@ export function setupAOEWeapon(
       let hitAny = false;
 
       // Find all enemies in targeting zone
+      // Use squared distance to avoid sqrt calculation
+      const zoneRadiusSquared = state.targetingZoneRadius * state.targetingZoneRadius;
+      
       for (const enemy of enemies) {
         // Skip if already hit in this cycle
         if (hitEnemies.has(enemy)) {
           continue;
         }
 
-        // Calculate distance from player to enemy
+        // Calculate squared distance from player to enemy (avoid sqrt)
         const dx = enemy.pos.x - player.pos.x;
         const dy = enemy.pos.y - player.pos.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const distanceSquared = dx * dx + dy * dy;
 
-        // Check if enemy is within targeting zone
-        if (distance <= state.targetingZoneRadius) {
+        // Check if enemy is within targeting zone (using squared distance)
+        if (distanceSquared <= zoneRadiusSquared) {
           // Hit the enemy
           onEnemyHit(enemy);
           hitEnemies.add(enemy);

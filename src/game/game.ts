@@ -29,7 +29,10 @@ export class Game {
   private targetingZone: any = null;
   private targetingZoneOverlay: any = null; // Blue overlay when slow weapon is active
   private aoeZoneOverlay: any = null; // Orange overlay when AOE weapon is active
-  private aoeWeapon: { update: () => void; triggerAnimation: () => void } | null = null;
+  private aoeWeapon: {
+    update: () => void;
+    triggerAnimation: () => void;
+  } | null = null;
 
   constructor(container: HTMLElement) {
     const width = Math.min(window.innerWidth, 1200);
@@ -180,45 +183,80 @@ export class Game {
     ]);
 
     // Update position and scale to follow player and match current radius
-    this.targetingZone.onUpdate(() => {
-      this.targetingZone.pos.x = this.player.pos.x;
-      this.targetingZone.pos.y = this.player.pos.y;
-      // Update scale if radius changes (from upgrades)
-      const newScale = (this.state.targetingZoneRadius * 2) / baseSpriteSize;
-      this.targetingZone.scale = this.k.vec2(newScale, newScale);
+    // Cache values to avoid recalculating every frame
+    let lastPlayerX = this.player.pos.x;
+    let lastPlayerY = this.player.pos.y;
+    let lastRadius = this.state.targetingZoneRadius;
+    let lastAOEActive = this.state.aoeWeaponActive;
+    let lastSlowActive = this.state.slowWeaponActive;
 
-      // Update overlay based on active weapons
-      if (this.state.aoeWeaponActive) {
-        // Show orange overlay for AOE weapon
-        this.aoeZoneOverlay.opacity = 0.15;
-        this.aoeZoneOverlay.radius = this.state.targetingZoneRadius;
-        this.aoeZoneOverlay.pos.x = this.player.pos.x;
-        this.aoeZoneOverlay.pos.y = this.player.pos.y;
-        // Hide blue overlay
-        this.targetingZoneOverlay.opacity = 0;
-        // Reduce white zone opacity
-        this.targetingZone.opacity = 0.3;
-      } else if (this.state.slowWeaponActive) {
-        // Show blue overlay for slow weapon
-        this.targetingZoneOverlay.opacity = 0.2;
-        this.targetingZoneOverlay.radius = this.state.targetingZoneRadius;
-        this.targetingZoneOverlay.pos.x = this.player.pos.x;
-        this.targetingZoneOverlay.pos.y = this.player.pos.y;
-        // Hide orange overlay
-        this.aoeZoneOverlay.opacity = 0;
-        this.aoeZoneOverlay.pos.x = this.player.pos.x;
-        this.aoeZoneOverlay.pos.y = this.player.pos.y;
-        // Reduce white zone opacity
-        this.targetingZone.opacity = 0.3;
+    this.targetingZone.onUpdate(() => {
+      const currentX = this.player.pos.x;
+      const currentY = this.player.pos.y;
+      const currentRadius = this.state.targetingZoneRadius;
+      const currentAOEActive = this.state.aoeWeaponActive;
+      const currentSlowActive = this.state.slowWeaponActive;
+
+      // Always update positions (player moves every frame)
+      this.targetingZone.pos.x = currentX;
+      this.targetingZone.pos.y = currentY;
+
+      // Update overlay positions every frame to follow player
+      this.targetingZoneOverlay.pos.x = currentX;
+      this.targetingZoneOverlay.pos.y = currentY;
+      this.aoeZoneOverlay.pos.x = currentX;
+      this.aoeZoneOverlay.pos.y = currentY;
+
+      lastPlayerX = currentX;
+      lastPlayerY = currentY;
+
+      // Only update scale if radius changed
+      if (currentRadius !== lastRadius) {
+        const newScale = (currentRadius * 2) / baseSpriteSize;
+        this.targetingZone.scale = this.k.vec2(newScale, newScale);
+        lastRadius = currentRadius;
+      }
+
+      // Update overlay visibility and radius if weapon states or radius changed
+      if (
+        currentAOEActive !== lastAOEActive ||
+        currentSlowActive !== lastSlowActive ||
+        currentRadius !== lastRadius
+      ) {
+        if (currentAOEActive) {
+          // Show orange overlay for AOE weapon
+          this.aoeZoneOverlay.opacity = 0.15;
+          this.aoeZoneOverlay.radius = currentRadius;
+          // Hide blue overlay
+          this.targetingZoneOverlay.opacity = 0;
+          // Reduce white zone opacity
+          this.targetingZone.opacity = 0.3;
+        } else if (currentSlowActive) {
+          // Show blue overlay for slow weapon
+          this.targetingZoneOverlay.opacity = 0.2;
+          this.targetingZoneOverlay.radius = currentRadius;
+          // Hide orange overlay
+          this.aoeZoneOverlay.opacity = 0;
+          // Reduce white zone opacity
+          this.targetingZone.opacity = 0.3;
+        } else {
+          // Hide both overlays
+          this.targetingZoneOverlay.opacity = 0;
+          this.aoeZoneOverlay.opacity = 0;
+          // Normal white zone opacity
+          this.targetingZone.opacity = 0.5;
+        }
+        lastAOEActive = currentAOEActive;
+        lastSlowActive = currentSlowActive;
       } else {
-        // Hide both overlays
-        this.targetingZoneOverlay.opacity = 0;
-        this.aoeZoneOverlay.opacity = 0;
-        // Update positions even when hidden
-        this.aoeZoneOverlay.pos.x = this.player.pos.x;
-        this.aoeZoneOverlay.pos.y = this.player.pos.y;
-        // Normal white zone opacity
-        this.targetingZone.opacity = 0.5;
+        // Even if states haven't changed, update radius if it changed (for active overlays)
+        if (currentRadius !== lastRadius) {
+          if (currentAOEActive) {
+            this.aoeZoneOverlay.radius = currentRadius;
+          } else if (currentSlowActive) {
+            this.targetingZoneOverlay.radius = currentRadius;
+          }
+        }
       }
     });
   }
@@ -447,8 +485,15 @@ export class Game {
         }
       }
 
-      // Update UI
-      updateUI(this.ui, this.state);
+      // Update UI (throttle to every 0.1 seconds for better performance)
+      const currentTime = this.k.time();
+      if (!(this as any).lastUIUpdateTime) {
+        (this as any).lastUIUpdateTime = currentTime;
+      }
+      if (currentTime - (this as any).lastUIUpdateTime >= 0.1) {
+        updateUI(this.ui, this.state);
+        (this as any).lastUIUpdateTime = currentTime;
+      }
     });
   }
 
@@ -519,18 +564,20 @@ export class Game {
     // Create a pulse animation: scale up and fade out
     const originalRadius = this.state.targetingZoneRadius;
     const originalOpacity = this.aoeZoneOverlay.opacity;
-    
+
     // Pulse effect: scale up to 1.2x and increase opacity, then return
-    this.k.tween(
-      this.aoeZoneOverlay.radius,
-      originalRadius * 1.2,
-      0.1,
-      (val) => {
-        this.aoeZoneOverlay.radius = val;
-        this.aoeZoneOverlay.opacity = Math.min(0.8, originalOpacity + 0.3);
-      },
-      this.k.easings.easeOutQuad,
-      () => {
+    this.k
+      .tween(
+        this.aoeZoneOverlay.radius,
+        originalRadius * 1.2,
+        0.1,
+        (val) => {
+          this.aoeZoneOverlay.radius = val;
+          this.aoeZoneOverlay.opacity = Math.min(0.8, originalOpacity + 0.3);
+        },
+        this.k.easings.easeOutQuad
+      )
+      .onEnd(() => {
         // Return to original size and opacity
         this.k.tween(
           this.aoeZoneOverlay.radius,
@@ -542,8 +589,7 @@ export class Game {
           },
           this.k.easings.easeInQuad
         );
-      }
-    );
+      });
   }
 
   private handlePlayerDeath(): void {

@@ -14,20 +14,22 @@ export function autoFireAtClosestEnemy(
   }
 
   // Calculate distances to all enemies within zone and sort them
-  const enemiesInRange: Array<{ enemy: any; distance: number }> = [];
+  // Use squared distance to avoid sqrt calculations
+  const zoneRadiusSquared = zoneRadius * zoneRadius;
+  const enemiesInRange: Array<{ enemy: any; distanceSquared: number }> = [];
 
   for (const enemy of enemies) {
     const dx = enemy.pos.x - player.pos.x;
     const dy = enemy.pos.y - player.pos.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    const distanceSquared = dx * dx + dy * dy;
 
-    if (distance <= zoneRadius) {
-      enemiesInRange.push({ enemy, distance });
+    if (distanceSquared <= zoneRadiusSquared) {
+      enemiesInRange.push({ enemy, distanceSquared });
     }
   }
 
-  // Sort enemies by distance (closest first)
-  enemiesInRange.sort((a, b) => a.distance - b.distance);
+  // Sort enemies by distance (closest first) - only calculate sqrt for sorting
+  enemiesInRange.sort((a, b) => a.distanceSquared - b.distanceSquared);
 
   // Fire projectiles at the X closest enemies (where X is the minimum of projectileCount and enemiesInRange.length)
   // Only fire as many projectiles as there are enemies in range
@@ -37,7 +39,7 @@ export function autoFireAtClosestEnemy(
     const target = enemiesInRange[i];
     const dx = target.enemy.pos.x - player.pos.x;
     const dy = target.enemy.pos.y - player.pos.y;
-    const distance = target.distance;
+    const distance = Math.sqrt(target.distanceSquared); // Only calculate sqrt when needed
 
     if (distance > 0) {
       // Normalize direction
@@ -119,11 +121,14 @@ export function fireProjectile(
     projectile.pos.y += currentDirY * projectileSpeed * k.dt();
 
     // Remove projectile when it goes off screen
+    // Cache screen dimensions to avoid repeated calls
+    const screenWidth = k.width();
+    const screenHeight = k.height();
     if (
       projectile.pos.x < -projectileSize ||
-      projectile.pos.x > k.width() + projectileSize ||
+      projectile.pos.x > screenWidth + projectileSize ||
       projectile.pos.y < -projectileSize ||
-      projectile.pos.y > k.height() + projectileSize
+      projectile.pos.y > screenHeight + projectileSize
     ) {
       projectile.destroy();
     }
