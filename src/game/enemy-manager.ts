@@ -105,21 +105,21 @@ export function spawnEnemy(
     // Update health bar position and value (only when health changes or position updates)
     // Use a separate update loop with throttling for health bars
     let lastHealth = enemyHealth;
-    let lastX = spawnX;
-    let lastY = spawnY;
+
     let lastHealthBarUpdate = 0;
     const HEALTH_BAR_UPDATE_INTERVAL = 0.05; // Update health bars every 0.05 seconds
-    
+
     enemy.onUpdate(() => {
       const currentTime = k.time();
       const currentHealth = (enemy as any).health;
       const currentX = enemy.pos.x;
       const currentY = enemy.pos.y;
-      
+
       // Only update health bar if health changed or enough time has passed
       const healthChanged = currentHealth !== lastHealth;
-      const timeElapsed = currentTime - lastHealthBarUpdate >= HEALTH_BAR_UPDATE_INTERVAL;
-      
+      const timeElapsed =
+        currentTime - lastHealthBarUpdate >= HEALTH_BAR_UPDATE_INTERVAL;
+
       if (healthChanged || timeElapsed) {
         // Update position
         healthBarBg.pos.x = currentX;
@@ -133,9 +133,7 @@ export function spawnEnemy(
           healthBar.width = healthBarWidth * healthPercentage;
           lastHealth = currentHealth;
         }
-        
-        lastX = currentX;
-        lastY = currentY;
+
         lastHealthBarUpdate = currentTime;
       }
     });
@@ -171,7 +169,10 @@ export function spawnEnemy(
 
     // Update slow weapon state cache periodically (not every frame)
     const currentTime = k.time();
-    if (currentTime - slowWeaponStateUpdateTime >= SLOW_WEAPON_STATE_CACHE_DURATION) {
+    if (
+      currentTime - slowWeaponStateUpdateTime >=
+      SLOW_WEAPON_STATE_CACHE_DURATION
+    ) {
       cachedSlowWeaponState = getSlowWeaponState();
       slowWeaponStateUpdateTime = currentTime;
     }
@@ -179,10 +180,12 @@ export function spawnEnemy(
     // Check if slow weapon is active and enemy is in targeting zone
     let currentSpeed = enemySpeed;
     if (cachedSlowWeaponState.active) {
-      const zoneRadiusSquared = cachedSlowWeaponState.zoneRadius * cachedSlowWeaponState.zoneRadius;
+      const zoneRadiusSquared =
+        cachedSlowWeaponState.zoneRadius * cachedSlowWeaponState.zoneRadius;
       if (distanceSquared <= zoneRadiusSquared) {
         // Apply slow effect: reduce speed by percentage
-        const speedMultiplier = 1 - cachedSlowWeaponState.effectPercentage / 100;
+        const speedMultiplier =
+          1 - cachedSlowWeaponState.effectPercentage / 100;
         currentSpeed = enemySpeed * speedMultiplier;
       }
     }
@@ -193,25 +196,31 @@ export function spawnEnemy(
     const separationForce = 30; // Force strength
     const separationDistance = enemySize * 1.5; // Minimum distance between enemies
     const separationDistanceSquared = separationDistance * separationDistance;
-    
-    if (currentTime - (enemy as any).lastSeparationCheck >= SEPARATION_CHECK_INTERVAL) {
+
+    if (
+      currentTime - (enemy as any).lastSeparationCheck >=
+      SEPARATION_CHECK_INTERVAL
+    ) {
       let separationX = 0;
       let separationY = 0;
       const allEnemies = k.get("enemy");
       let nearbyCount = 0;
-      
+
       // Only check nearby enemies (within separation distance * 2 for efficiency)
       const checkRadiusSquared = separationDistanceSquared * 4;
-      
+
       for (const otherEnemy of allEnemies) {
         if (otherEnemy === enemy) continue;
-        
+
         const otherDx = enemy.pos.x - otherEnemy.pos.x;
         const otherDy = enemy.pos.y - otherEnemy.pos.y;
         const otherDistanceSquared = otherDx * otherDx + otherDy * otherDy;
-        
+
         // Only process if within check radius
-        if (otherDistanceSquared < checkRadiusSquared && otherDistanceSquared > 0) {
+        if (
+          otherDistanceSquared < checkRadiusSquared &&
+          otherDistanceSquared > 0
+        ) {
           if (otherDistanceSquared < separationDistanceSquared) {
             const otherDistance = Math.sqrt(otherDistanceSquared);
             const invOtherDistance = 1 / otherDistance;
@@ -222,14 +231,18 @@ export function spawnEnemy(
           }
         }
       }
-      
+
       // Normalize separation force if there are nearby enemies
       if (nearbyCount > 0) {
-        const separationLength = Math.sqrt(separationX * separationX + separationY * separationY);
+        const separationLength = Math.sqrt(
+          separationX * separationX + separationY * separationY
+        );
         if (separationLength > 0) {
           const invSeparationLength = 1 / separationLength;
-          (enemy as any).separationX = separationX * invSeparationLength * separationForce;
-          (enemy as any).separationY = separationY * invSeparationLength * separationForce;
+          (enemy as any).separationX =
+            separationX * invSeparationLength * separationForce;
+          (enemy as any).separationY =
+            separationY * invSeparationLength * separationForce;
         } else {
           (enemy as any).separationX = 0;
           (enemy as any).separationY = 0;
@@ -238,10 +251,10 @@ export function spawnEnemy(
         (enemy as any).separationX = 0;
         (enemy as any).separationY = 0;
       }
-      
+
       (enemy as any).lastSeparationCheck = currentTime;
     }
-    
+
     // Apply stored separation force
     const separationX = (enemy as any).separationX;
     const separationY = (enemy as any).separationY;
@@ -252,11 +265,11 @@ export function spawnEnemy(
       const invDistance = 1 / distance; // Inverse distance for normalization
       let moveX = dx * invDistance * currentSpeed * k.dt();
       let moveY = dy * invDistance * currentSpeed * k.dt();
-      
+
       // Apply separation force (reduces movement towards player when enemies are close)
       moveX += separationX * k.dt();
       moveY += separationY * k.dt();
-      
+
       enemy.pos.x += moveX;
       enemy.pos.y += moveY;
     }

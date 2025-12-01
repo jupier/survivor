@@ -4,7 +4,7 @@ export function spawnXP(
 ): void {
   // Create XP point with gem sprite (scaled down to 75% of original size)
   // No animation for performance
-  const xp = k.add([
+  k.add([
     k.sprite("xp"),
     k.pos(position.x, position.y),
     k.anchor("center"),
