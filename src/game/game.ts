@@ -480,8 +480,38 @@ export class Game {
         }
       }
 
-      // Update UI (throttle to every 0.1 seconds for better performance)
+      // Update FPS counter
       const currentTime = this.k.time();
+      if (!(this as any).lastFPSUpdateTime) {
+        (this as any).lastFPSUpdateTime = currentTime;
+        (this as any).fpsFrameCount = 0;
+        (this as any).fpsAccumulator = 0;
+      }
+
+      const dt = this.k.dt();
+      if (dt > 0) {
+        (this as any).fpsFrameCount++;
+        (this as any).fpsAccumulator += dt;
+
+        // Update FPS display every 0.1 seconds
+        if (currentTime - (this as any).lastFPSUpdateTime >= 0.1) {
+          const frameCount = (this as any).fpsFrameCount;
+          if (frameCount > 0) {
+            const avgFrameTime = (this as any).fpsAccumulator / frameCount;
+            if (avgFrameTime > 0) {
+              const fps = Math.round(1 / avgFrameTime);
+              if (this.ui && this.ui.fpsText) {
+                this.ui.fpsText.text = `FPS: ${fps}`;
+              }
+            }
+          }
+          (this as any).fpsFrameCount = 0;
+          (this as any).fpsAccumulator = 0;
+          (this as any).lastFPSUpdateTime = currentTime;
+        }
+      }
+
+      // Update UI (throttle to every 0.1 seconds for better performance)
       if (!(this as any).lastUIUpdateTime) {
         (this as any).lastUIUpdateTime = currentTime;
       }

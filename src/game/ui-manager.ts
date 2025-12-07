@@ -12,6 +12,7 @@ export interface UIElements {
   projectileStatText: any;
   zoneStatText: any;
   fireRateStatText: any;
+  fpsText: any;
 }
 
 export function createUI(
@@ -198,6 +199,16 @@ export function createUI(
   ]);
   statsY += 20;
 
+  // FPS counter (bottom left)
+  const fpsText = k.add([
+    k.text("FPS: 60", { size: 16 }),
+    k.color(150, 255, 150), // Light green color
+    k.pos(uiPadding, k.height() - uiPadding),
+    k.anchor("botleft"),
+    k.fixed(),
+    k.z(110),
+  ]);
+
   return {
     levelText,
     timerText,
@@ -210,13 +221,11 @@ export function createUI(
     projectileStatText,
     zoneStatText,
     fireRateStatText,
+    fpsText,
   };
 }
 
-export function updateUI(
-  ui: UIElements,
-  state: GameState
-): void {
+export function updateUI(ui: UIElements, state: GameState): void {
   const barWidth = 250;
 
   // Update timer
@@ -226,9 +235,12 @@ export function updateUI(
   ui.timerText.text = timeString;
 
   // Update experience bar
-  const expPercentage = Math.min(state.playerExperience / state.maxExperience, 1);
+  const expPercentage = Math.min(
+    state.playerExperience / state.maxExperience,
+    1
+  );
   ui.expBar.width = barWidth * expPercentage;
-  
+
   // Calculate gems: each gem gives 10 XP
   const xpPerGem = 10;
   const gemsCollected = Math.floor(state.playerExperience / xpPerGem);
@@ -250,6 +262,7 @@ export function updateUI(
   ui.speedStatText.text = `Speed: ${Math.round(state.speed)}`;
   ui.projectileStatText.text = `Projectiles: ${state.projectileCount}`;
   ui.zoneStatText.text = `Range: ${state.targetingZoneRadius}`;
-  ui.fireRateStatText.text = `Fire Rate: ${(1 / state.fireInterval).toFixed(1)}/s`;
+  ui.fireRateStatText.text = `Fire Rate: ${(1 / state.fireInterval).toFixed(
+    1
+  )}/s`;
 }
-
