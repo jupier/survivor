@@ -8,7 +8,8 @@ export function setupAOEWeapon(
     isPaused: boolean;
   },
   onEnemyHit: (enemy: any) => void,
-  onHitAnimation?: () => void
+  onHitAnimation?: () => void,
+  onAOEActivate?: () => void
 ): { update: () => void; triggerAnimation: () => void } {
   let lastHitTime = 0;
   let hitEnemies = new Set<any>();
@@ -21,13 +22,13 @@ export function setupAOEWeapon(
 
   const update = () => {
     const state = getState();
-    
+
     if (!state.aoeWeaponActive || state.isPaused) {
       return;
     }
 
     const currentTime = k.time();
-    
+
     // Check if cooldown has passed
     if (currentTime - lastHitTime >= state.aoeWeaponCooldown) {
       const enemies = k.get("enemy");
@@ -35,8 +36,9 @@ export function setupAOEWeapon(
 
       // Find all enemies in targeting zone
       // Use squared distance to avoid sqrt calculation
-      const zoneRadiusSquared = state.targetingZoneRadius * state.targetingZoneRadius;
-      
+      const zoneRadiusSquared =
+        state.targetingZoneRadius * state.targetingZoneRadius;
+
       for (const enemy of enemies) {
         // Skip if already hit in this cycle
         if (hitEnemies.has(enemy)) {
@@ -62,10 +64,13 @@ export function setupAOEWeapon(
         lastHitTime = currentTime;
         hitEnemies.clear();
         triggerAnimation();
+        // Play AOE activate sound
+        if (onAOEActivate) {
+          onAOEActivate();
+        }
       }
     }
   };
 
   return { update, triggerAnimation };
 }
-

@@ -4,7 +4,8 @@ export function autoFireAtClosestEnemy(
   zoneRadius: number,
   projectileCount: number,
   onEnemyHit: (enemy: any) => void,
-  isPaused: () => boolean = () => false
+  isPaused: () => boolean = () => false,
+  onProjectileFire?: () => void
 ): void {
   // Find all enemies
   const enemies = k.get("enemy");
@@ -35,6 +36,11 @@ export function autoFireAtClosestEnemy(
   // Only fire as many projectiles as there are enemies in range
   const targetsToFire = Math.min(projectileCount, enemiesInRange.length);
 
+  // Play projectile fire sound once per volley (only if firing at least one projectile)
+  if (targetsToFire > 0 && onProjectileFire) {
+    onProjectileFire();
+  }
+
   for (let i = 0; i < targetsToFire; i++) {
     const target = enemiesInRange[i];
     const dx = target.enemy.pos.x - player.pos.x;
@@ -46,7 +52,7 @@ export function autoFireAtClosestEnemy(
       const directionX = dx / distance;
       const directionY = dy / distance;
 
-      // Fire one projectile at this enemy
+      // Fire one projectile at this enemy (don't pass sound callback to avoid duplicate sounds)
       fireProjectile(
         k,
         player.pos,

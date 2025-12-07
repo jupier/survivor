@@ -145,6 +145,11 @@ export function setupPlayerCollisions(
     onLevelUp: () => void;
     onEnemyKilled: () => void;
     onDeath: () => void;
+  },
+  sounds?: {
+    onPlayerHit?: () => void;
+    onXPCollect?: () => void;
+    onHealthCollect?: () => void;
   }
 ): void {
   let isInvulnerable = false; // Prevent multiple hits in quick succession
@@ -157,6 +162,12 @@ export function setupPlayerCollisions(
 
     state.playerHealth -= 1;
     callbacks.onHealthChange(state.playerHealth);
+    
+    // Play player hit sound
+    if (sounds?.onPlayerHit) {
+      sounds.onPlayerHit();
+    }
+    
     enemy.destroy(); // Destroy enemy on contact
 
     // Hit animation: flash opacity and scale shake
@@ -201,6 +212,12 @@ export function setupPlayerCollisions(
   // Handle player collision with XP points
   player.onCollide("xp", (xp: any) => {
     state.playerExperience += 10; // Gain 10 XP per point
+    
+    // Play XP collect sound
+    if (sounds?.onXPCollect) {
+      sounds.onXPCollect();
+    }
+    
     callbacks.onExperienceGain();
     xp.destroy();
 
@@ -220,6 +237,11 @@ export function setupPlayerCollisions(
     if (state.playerHealth < state.maxHealth) {
       state.playerHealth = Math.min(state.maxHealth, state.playerHealth + 1);
       callbacks.onHealthChange(state.playerHealth);
+      
+      // Play health collect sound
+      if (sounds?.onHealthCollect) {
+        sounds.onHealthCollect();
+      }
     }
     healthPoint.destroy();
   });

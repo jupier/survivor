@@ -13,6 +13,7 @@ import { setupAOEWeapon } from "./aoe-weapon-manager";
 import { showLevelUpMenu } from "./level-up-manager";
 import { showPauseMenu, hidePauseMenu, showDeathScreen } from "./menu-manager";
 import { spawnXP, spawnHealthPoint } from "./pickup-manager";
+import { loadSounds, SoundManager } from "./sound-manager";
 
 export class Game {
   private k: ReturnType<typeof kaplay>;
@@ -33,6 +34,7 @@ export class Game {
     update: () => void;
     triggerAnimation: () => void;
   } | null = null;
+  private sounds!: SoundManager;
 
   constructor(container: HTMLElement) {
     const width = Math.min(window.innerWidth, 1200);
@@ -56,6 +58,9 @@ export class Game {
     // Load all sprites
     await loadAllSprites(this.k);
 
+    // Load sounds
+    this.sounds = await loadSounds();
+
     // Create background
     createBackground(this.k);
 
@@ -75,23 +80,39 @@ export class Game {
     );
 
     // Setup player collisions
-    setupPlayerCollisions(this.k, this.player, this.state, {
-      onHealthChange: (newHealth: number) => {
-        this.state.playerHealth = newHealth;
+    setupPlayerCollisions(
+      this.k,
+      this.player,
+      this.state,
+      {
+        onHealthChange: (newHealth: number) => {
+          this.state.playerHealth = newHealth;
+        },
+        onExperienceGain: () => {
+          // Sound is played in collision handler
+        },
+        onLevelUp: () => {
+          this.handleLevelUp();
+        },
+        onEnemyKilled: () => {
+          this.state.enemiesKilled++;
+        },
+        onDeath: () => {
+          this.handlePlayerDeath();
+        },
       },
-      onExperienceGain: () => {
-        // Already handled in setupPlayerCollisions
-      },
-      onLevelUp: () => {
-        this.handleLevelUp();
-      },
-      onEnemyKilled: () => {
-        this.state.enemiesKilled++;
-      },
-      onDeath: () => {
-        this.handlePlayerDeath();
-      },
-    });
+      {
+        onPlayerHit: () => {
+          this.sounds.playPlayerHit();
+        },
+        onXPCollect: () => {
+          this.sounds.playXPCollect();
+        },
+        onHealthCollect: () => {
+          this.sounds.playHealthCollect();
+        },
+      }
+    );
 
     // Setup enemy spawning
     this.enemySpawnControllers = setupEnemySpawning(
@@ -130,6 +151,10 @@ export class Game {
       () => {
         // Trigger animation when AOE weapon hits
         this.animateAOEHit();
+      },
+      () => {
+        // Play AOE activate sound
+        this.sounds.playAOEActivate();
       }
     );
 
@@ -267,7 +292,8 @@ export class Game {
           (enemy: any) => {
             this.handleEnemyHit(enemy);
           },
-          () => this.state.isPaused
+          () => this.state.isPaused,
+          () => this.sounds.playProjectileFire()
         );
       }
     });
@@ -280,8 +306,16 @@ export class Game {
     }
     (enemy as any).health -= 1;
 
+    // Play hit sound
+    if ((enemy as any).health > 0) {
+      this.sounds.playEnemyHit();
+    }
+
     // Check if enemy is dead
     if ((enemy as any).health <= 0) {
+      // Play death sound
+      this.sounds.playEnemyDeath();
+
       // Spawn XP point at enemy position
       spawnXP(this.k, enemy.pos);
 
@@ -523,6 +557,9 @@ export class Game {
   }
 
   private handleLevelUp(): void {
+    // Play level up sound
+    this.sounds.playLevelUp();
+
     this.state.isPaused = true;
     showLevelUpMenu(
       this.k,
