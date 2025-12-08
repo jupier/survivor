@@ -15,7 +15,7 @@ export interface UIElements {
   fireRateStatText: any;
   fpsText: any;
   powerUpContainer: any;
-  powerUpTexts: Map<string, any>;
+  powerUpTexts: Map<PowerUpType, any>;
 }
 
 export function createUI(

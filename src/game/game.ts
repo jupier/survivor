@@ -188,39 +188,40 @@ export class Game {
     // this.spawnManyEnemies(50);
   }
 
-  private spawnManyEnemies(count: number): void {
-    const enemyTypes = [
-      { isStrong: false, isElite: false, isSwarm: false }, // Normal
-      { isStrong: true, isElite: false, isSwarm: false }, // Strong
-      { isStrong: false, isElite: true, isSwarm: false }, // Elite
-      { isSwarm: true }, // Swarm (swarm enemies don't need isStrong/isElite)
-    ];
+  // Unused test function - kept for potential future testing
+  // private spawnManyEnemies(count: number): void {
+  //   const enemyTypes = [
+  //     { isStrong: false, isElite: false, isSwarm: false }, // Normal
+  //     { isStrong: true, isElite: false, isSwarm: false }, // Strong
+  //     { isStrong: false, isElite: true, isSwarm: false }, // Elite
+  //     { isSwarm: true }, // Swarm (swarm enemies don't need isStrong/isElite)
+  //   ];
 
-    // Spawn 100 of each type
-    for (const enemyType of enemyTypes) {
-      for (let i = 0; i < count; i++) {
-        const spawnX = Math.random() * this.k.width();
-        const spawnY = Math.random() * this.k.height();
+  //   // Spawn 100 of each type
+  //   for (const enemyType of enemyTypes) {
+  //     for (let i = 0; i < count; i++) {
+  //       const spawnX = Math.random() * this.k.width();
+  //       const spawnY = Math.random() * this.k.height();
 
-        spawnEnemy(
-          this.k,
-          this.player,
-          this.enemySpeed,
-          this.enemySize,
-          enemyType.isStrong || false,
-          enemyType.isElite || false,
-          enemyType.isSwarm || false,
-          () => this.state.isPaused,
-          () => ({
-            active: this.state.slowWeaponActive,
-            effectPercentage: this.state.slowEffectPercentage,
-            zoneRadius: this.state.targetingZoneRadius,
-          }),
-          { x: spawnX, y: spawnY } // Spawn at specific position
-        );
-      }
-    }
-  }
+  //       spawnEnemy(
+  //         this.k,
+  //         this.player,
+  //         this.enemySpeed,
+  //         this.enemySize,
+  //         enemyType.isStrong || false,
+  //         enemyType.isElite || false,
+  //         enemyType.isSwarm || false,
+  //         () => this.state.isPaused,
+  //         () => ({
+  //           active: this.state.slowWeaponActive,
+  //           effectPercentage: this.state.slowEffectPercentage,
+  //           zoneRadius: this.state.targetingZoneRadius,
+  //         }),
+  //         { x: spawnX, y: spawnY } // Spawn at specific position
+  //       );
+  //     }
+  //   }
+  // }
 
   private setupTargetingZone(): void {
     const baseSpriteSize = 300; // Size of the sprite we created

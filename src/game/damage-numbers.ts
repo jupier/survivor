@@ -13,6 +13,8 @@ export function showDamageNumber(
     ),
     k.pos(position.x, position.y),
     k.anchor("center"),
+    k.opacity(1),
+    k.scale(1, 1),
     k.z(100),
     "damageNumber",
   ]);
