@@ -4,12 +4,22 @@ import {
   createStrongEnemySprite,
   createEliteEnemySprite,
   createSwarmEnemySprite,
+  createChargerEnemySprite,
+  createSplitterEnemySprite,
+  createExploderEnemySprite,
+  createBossEnemySprite,
 } from "../assets/create-enemy-sprites";
 import { createBackgroundPattern } from "../assets/create-background-sprite";
 import { createXPSprite } from "../assets/create-xp-sprite";
 import { createHealthSprite } from "../assets/create-health-sprite";
 import { createProjectileSprite } from "../assets/create-projectile-sprite";
 import { createTargetingZoneSprite } from "../assets/create-targeting-zone-sprite";
+import {
+  createSpeedPowerUpSprite,
+  createMagnetPowerUpSprite,
+  createInvincibilityPowerUpSprite,
+  createDamagePowerUpSprite,
+} from "../assets/create-powerup-sprites";
 
 export async function loadAllSprites(
   k: ReturnType<typeof import("kaplay").default>
@@ -48,6 +58,18 @@ export async function loadAllSprites(
   const swarmEnemySpriteUrl = createSwarmEnemySprite();
   await k.loadSprite("enemy-swarm", swarmEnemySpriteUrl);
 
+  const chargerEnemySpriteUrl = createChargerEnemySprite();
+  await k.loadSprite("enemy-charger", chargerEnemySpriteUrl);
+
+  const splitterEnemySpriteUrl = createSplitterEnemySprite();
+  await k.loadSprite("enemy-splitter", splitterEnemySpriteUrl);
+
+  const exploderEnemySpriteUrl = createExploderEnemySprite();
+  await k.loadSprite("enemy-exploder", exploderEnemySpriteUrl);
+
+  const bossEnemySpriteUrl = createBossEnemySprite();
+  await k.loadSprite("enemy-boss", bossEnemySpriteUrl);
+
   // Load other sprites
   const backgroundPatternUrl = createBackgroundPattern();
   await k.loadSprite("background", backgroundPatternUrl);
@@ -63,6 +85,19 @@ export async function loadAllSprites(
 
   const targetingZoneSpriteUrl = createTargetingZoneSprite();
   await k.loadSprite("targeting-zone", targetingZoneSpriteUrl);
+
+  // Load power-up sprites
+  const speedPowerUpSpriteUrl = createSpeedPowerUpSprite();
+  await k.loadSprite("powerup-speed", speedPowerUpSpriteUrl);
+
+  const magnetPowerUpSpriteUrl = createMagnetPowerUpSprite();
+  await k.loadSprite("powerup-magnet", magnetPowerUpSpriteUrl);
+
+  const invincibilityPowerUpSpriteUrl = createInvincibilityPowerUpSprite();
+  await k.loadSprite("powerup-invincibility", invincibilityPowerUpSpriteUrl);
+
+  const damagePowerUpSpriteUrl = createDamagePowerUpSprite();
+  await k.loadSprite("powerup-damage", damagePowerUpSpriteUrl);
 }
 
 export function createBackground(k: ReturnType<typeof import("kaplay").default>): void {

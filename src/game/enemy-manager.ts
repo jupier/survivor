@@ -1,3 +1,13 @@
+export type EnemyType =
+  | "normal"
+  | "strong"
+  | "elite"
+  | "swarm"
+  | "charger"
+  | "splitter"
+  | "exploder"
+  | "boss";
+
 export function spawnEnemy(
   k: ReturnType<typeof import("kaplay").default>,
   player: any,
@@ -11,143 +21,109 @@ export function spawnEnemy(
     active: boolean;
     effectPercentage: number;
     zoneRadius: number;
-  } = () => ({ active: false, effectPercentage: 0, zoneRadius: 0 })
+  } = () => ({ active: false, effectPercentage: 0, zoneRadius: 0 }),
+  position?: { x: number; y: number },
+  enemyType?: EnemyType
 ): void {
   // Spawn enemy at random position on the map edges
   const side = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
   let spawnX = 0;
   let spawnY = 0;
 
-  switch (side) {
-    case 0: // Top
-      spawnX = Math.random() * k.width();
-      spawnY = -enemySize;
-      break;
-    case 1: // Right
-      spawnX = k.width() + enemySize;
-      spawnY = Math.random() * k.height();
-      break;
-    case 2: // Bottom
-      spawnX = Math.random() * k.width();
-      spawnY = k.height() + enemySize;
-      break;
-    case 3: // Left
-      spawnX = -enemySize;
-      spawnY = Math.random() * k.height();
-      break;
+  if (position) {
+    // Use provided position
+    spawnX = position.x;
+    spawnY = position.y;
+  } else {
+    // Original random edge spawning logic
+    switch (side) {
+      case 0: // Top
+        spawnX = Math.random() * k.width();
+        spawnY = -enemySize;
+        break;
+      case 1: // Right
+        spawnX = k.width() + enemySize;
+        spawnY = Math.random() * k.height();
+        break;
+      case 2: // Bottom
+        spawnX = Math.random() * k.width();
+        spawnY = k.height() + enemySize;
+        break;
+      case 3: // Left
+        spawnX = -enemySize;
+        spawnY = Math.random() * k.height();
+        break;
+    }
   }
 
-  // Enemy type is determined by the parameters
+  // Determine enemy type and properties
   let enemyHealth: number;
   let enemySpriteName: string;
-  if (isSwarmEnemy) {
+  let actualEnemyType: EnemyType;
+  let speedMultiplier = 1;
+  let sizeMultiplier = 1;
+
+  if (enemyType === "boss") {
+    enemyHealth = 50;
+    enemySpriteName = "enemy-boss";
+    actualEnemyType = "boss";
+    sizeMultiplier = 2; // Boss is bigger
+    speedMultiplier = 0.7; // Boss is slower
+  } else if (enemyType === "charger") {
+    enemyHealth = 1;
+    enemySpriteName = "enemy-charger";
+    actualEnemyType = "charger";
+    speedMultiplier = 1.5; // Charger is faster (reduced from 1.8)
+  } else if (enemyType === "splitter") {
+    enemyHealth = 2;
+    enemySpriteName = "enemy-splitter";
+    actualEnemyType = "splitter";
+  } else if (enemyType === "exploder") {
+    enemyHealth = 1;
+    enemySpriteName = "enemy-exploder";
+    actualEnemyType = "exploder";
+  } else if (isSwarmEnemy) {
     enemyHealth = 1;
     enemySpriteName = "enemy-swarm";
+    actualEnemyType = "swarm";
   } else if (isEliteEnemy) {
     enemyHealth = 3;
     enemySpriteName = "enemy-elite";
+    actualEnemyType = "elite";
   } else if (isStrongEnemy) {
     enemyHealth = 2;
     enemySpriteName = "enemy-strong";
+    actualEnemyType = "strong";
   } else {
     enemyHealth = 1;
     enemySpriteName = "enemy-normal";
+    actualEnemyType = "normal";
   }
+
+  const actualSize = enemySize * sizeMultiplier;
+  const actualSpeed = enemySpeed * speedMultiplier;
 
   // Create enemy with sprite (scaled down to 75% of original size)
   const enemy = k.add([
     k.sprite(enemySpriteName),
     k.pos(spawnX, spawnY),
     k.anchor("center"),
-    k.area(),
-    k.scale(0.75, 0.75), // Scale down to 75% (24px instead of 32px)
+    k.area({
+      collisionIgnore: ["enemy", "xp", "healthPoint"],
+    }),
+    k.scale(0.75 * sizeMultiplier, 0.75 * sizeMultiplier),
     k.z(45), // Ensure enemies are above background but below player
     "enemy",
   ]);
 
-  // Add health tracking to enemy
+  // Add health tracking and enemy type
   (enemy as any).health = enemyHealth;
   (enemy as any).maxHealth = enemyHealth;
+  (enemy as any).enemyType = actualEnemyType;
   (enemy as any).lastSeparationCheck = 0;
   (enemy as any).separationX = 0;
   (enemy as any).separationY = 0;
-
-  // Add health bar for enemies with more than 1 HP (strong and elite)
-  if (enemyHealth > 1) {
-    const healthBarWidth = enemySize + 4;
-    const healthBarHeight = 3;
-    const healthBarOffset = -enemySize / 2 - 8;
-
-    // Health bar background
-    const healthBarBg = k.add([
-      k.rect(healthBarWidth, healthBarHeight),
-      k.color(60, 60, 60),
-      k.pos(spawnX, spawnY + healthBarOffset),
-      k.anchor("center"),
-      k.z(60),
-    ]);
-
-    // Health bar fill (green)
-    const healthBar = k.add([
-      k.rect(healthBarWidth, healthBarHeight),
-      k.color(0, 255, 0), // Green color
-      k.pos(spawnX, spawnY + healthBarOffset),
-      k.anchor("center"),
-      k.z(61),
-    ]);
-
-    // Store health bar references on enemy
-    (enemy as any).healthBarBg = healthBarBg;
-    (enemy as any).healthBar = healthBar;
-    (enemy as any).healthBarWidth = healthBarWidth;
-    (enemy as any).healthBarOffset = healthBarOffset;
-
-    // Update health bar position and value (only when health changes or position updates)
-    // Use a separate update loop with throttling for health bars
-    let lastHealth = enemyHealth;
-
-    let lastHealthBarUpdate = 0;
-    const HEALTH_BAR_UPDATE_INTERVAL = 0.05; // Update health bars every 0.05 seconds
-
-    enemy.onUpdate(() => {
-      const currentTime = k.time();
-      const currentHealth = (enemy as any).health;
-      const currentX = enemy.pos.x;
-      const currentY = enemy.pos.y;
-
-      // Only update health bar if health changed or enough time has passed
-      const healthChanged = currentHealth !== lastHealth;
-      const timeElapsed =
-        currentTime - lastHealthBarUpdate >= HEALTH_BAR_UPDATE_INTERVAL;
-
-      if (healthChanged || timeElapsed) {
-        // Update position
-        healthBarBg.pos.x = currentX;
-        healthBarBg.pos.y = currentY + healthBarOffset;
-        healthBar.pos.x = currentX;
-        healthBar.pos.y = currentY + healthBarOffset;
-
-        // Update width only if health changed
-        if (healthChanged) {
-          const healthPercentage = currentHealth / (enemy as any).maxHealth;
-          healthBar.width = healthBarWidth * healthPercentage;
-          lastHealth = currentHealth;
-        }
-
-        lastHealthBarUpdate = currentTime;
-      }
-    });
-
-    // Clean up health bar when enemy is destroyed
-    enemy.onDestroy(() => {
-      if ((enemy as any).healthBarBg) {
-        (enemy as any).healthBarBg.destroy();
-      }
-      if ((enemy as any).healthBar) {
-        (enemy as any).healthBar.destroy();
-      }
-    });
-  }
+  (enemy as any).chargeCooldown = 0; // For charger enemy
 
   // Move enemy towards player
   // Cache slow weapon state to avoid calling function every frame
@@ -156,8 +132,8 @@ export function spawnEnemy(
   const SLOW_WEAPON_STATE_CACHE_DURATION = 0.1; // Update cache every 0.1 seconds
 
   enemy.onUpdate(() => {
-    // Don't update if game is paused
-    if (isPaused()) {
+    // Don't update if game is paused or enemy is dying
+    if (isPaused() || (enemy as any).isDying) {
       return;
     }
 
@@ -178,23 +154,22 @@ export function spawnEnemy(
     }
 
     // Check if slow weapon is active and enemy is in targeting zone
-    let currentSpeed = enemySpeed;
+    let currentSpeed = actualSpeed;
     if (cachedSlowWeaponState.active) {
       const zoneRadiusSquared =
         cachedSlowWeaponState.zoneRadius * cachedSlowWeaponState.zoneRadius;
       if (distanceSquared <= zoneRadiusSquared) {
         // Apply slow effect: reduce speed by percentage
-        const speedMultiplier =
-          1 - cachedSlowWeaponState.effectPercentage / 100;
-        currentSpeed = enemySpeed * speedMultiplier;
+        const slowMultiplier = 1 - cachedSlowWeaponState.effectPercentage / 100;
+        currentSpeed = actualSpeed * slowMultiplier;
       }
     }
 
     // Add separation force to avoid overlapping with other enemies
     // Only check separation periodically to reduce performance impact
-    const SEPARATION_CHECK_INTERVAL = 0.1; // Check every 0.1 seconds
-    const separationForce = 30; // Force strength
-    const separationDistance = enemySize * 1.5; // Minimum distance between enemies
+    const SEPARATION_CHECK_INTERVAL = 0.2; // Check every 0.2 seconds
+    const separationForce = 50; // Force strength
+    const separationDistance = actualSize * 1.5; // Minimum distance between enemies
     const separationDistanceSquared = separationDistance * separationDistance;
 
     if (
@@ -274,6 +249,94 @@ export function spawnEnemy(
       enemy.pos.y += moveY;
     }
   });
+
+  // Special behavior for charger enemy
+  if (actualEnemyType === "charger") {
+    enemy.onUpdate(() => {
+      if (isPaused() || (enemy as any).isDying) return;
+
+      const dx = player.pos.x - enemy.pos.x;
+      const dy = player.pos.y - enemy.pos.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      (enemy as any).chargeCooldown -= k.dt();
+
+      // Charge every 3 seconds if close enough
+      if ((enemy as any).chargeCooldown <= 0 && distance < 200) {
+        (enemy as any).chargeCooldown = 3;
+        // Store charge direction
+        if (distance > 0) {
+          (enemy as any).chargeDirX = dx / distance;
+          (enemy as any).chargeDirY = dy / distance;
+          (enemy as any).isCharging = true;
+          (enemy as any).chargeDuration = 0.5;
+        }
+      }
+
+      // Apply charge movement
+      if ((enemy as any).isCharging && (enemy as any).chargeDuration > 0) {
+        (enemy as any).chargeDuration -= k.dt();
+        const chargeSpeed = actualSpeed * 3;
+        enemy.pos.x += (enemy as any).chargeDirX * chargeSpeed * k.dt();
+        enemy.pos.y += (enemy as any).chargeDirY * chargeSpeed * k.dt();
+        if ((enemy as any).chargeDuration <= 0) {
+          (enemy as any).isCharging = false;
+        }
+      }
+    });
+  }
+}
+
+// Add boss spawning function
+export function spawnBoss(
+  k: ReturnType<typeof import("kaplay").default>,
+  player: any,
+  enemySpeed: number,
+  enemySize: number,
+  isPaused: () => boolean,
+  getSlowWeaponState: () => {
+    active: boolean;
+    effectPercentage: number;
+    zoneRadius: number;
+  }
+): void {
+  // Spawn boss at center of a random edge
+  const side = Math.floor(Math.random() * 4);
+  let spawnX = 0;
+  let spawnY = 0;
+
+  switch (side) {
+    case 0: // Top
+      spawnX = k.width() / 2;
+      spawnY = -enemySize * 2;
+      break;
+    case 1: // Right
+      spawnX = k.width() + enemySize * 2;
+      spawnY = k.height() / 2;
+      break;
+    case 2: // Bottom
+      spawnX = k.width() / 2;
+      spawnY = k.height() + enemySize * 2;
+      break;
+    case 3: // Left
+      spawnX = -enemySize * 2;
+      spawnY = k.height() / 2;
+      break;
+  }
+
+  spawnEnemy(
+    k,
+    player,
+    enemySpeed,
+    enemySize,
+    false,
+    false,
+    false,
+    isPaused,
+    getSlowWeaponState,
+    { x: spawnX, y: spawnY },
+    "boss"
+  );
 }
 
 export function setupEnemySpawning(
@@ -293,8 +356,11 @@ export function setupEnemySpawning(
   strongController: any;
   eliteController: any;
   swarmController: any;
+  chargerController: any;
+  splitterController: any;
+  exploderController: any;
 } {
-  // Spawn normal enemies periodically (always active)
+  // Spawn normal enemies periodically (always active, only normal enemies)
   let normalController = k.loop(spawnInterval, () => {
     if (!isPaused()) {
       spawnEnemy(
@@ -306,7 +372,9 @@ export function setupEnemySpawning(
         false,
         false,
         isPaused,
-        getSlowWeaponState
+        getSlowWeaponState,
+        undefined,
+        "normal"
       );
     }
   });
@@ -325,15 +393,63 @@ export function setupEnemySpawning(
           false,
           false,
           isPaused,
-          getSlowWeaponState
-        ); // true = strong enemy (2 HP)
+          getSlowWeaponState,
+          undefined,
+          "strong"
+        );
       }
     });
   });
 
-  // Spawn elite enemies after 60 seconds (1 minute)
-  let eliteController: any = null;
+  // Spawn splitter enemies after 45 seconds (easier special enemy)
+  let splitterController: any = null;
   k.wait(60, () => {
+    splitterController = k.loop(spawnInterval * 2, () => {
+      // Spawn half as often as normal enemies
+      if (!isPaused()) {
+        spawnEnemy(
+          k,
+          player,
+          enemySpeed,
+          enemySize,
+          false,
+          false,
+          false,
+          isPaused,
+          getSlowWeaponState,
+          undefined,
+          "splitter"
+        );
+      }
+    });
+  });
+
+  // Spawn exploder enemies after 60 seconds
+  let exploderController: any = null;
+  k.wait(90, () => {
+    exploderController = k.loop(spawnInterval * 2, () => {
+      // Spawn half as often as normal enemies
+      if (!isPaused()) {
+        spawnEnemy(
+          k,
+          player,
+          enemySpeed,
+          enemySize,
+          false,
+          false,
+          false,
+          isPaused,
+          getSlowWeaponState,
+          undefined,
+          "exploder"
+        );
+      }
+    });
+  });
+
+  // Spawn elite enemies after 90 seconds (1.5 minutes)
+  let eliteController: any = null;
+  k.wait(120, () => {
     eliteController = k.loop(spawnInterval, () => {
       if (!isPaused()) {
         spawnEnemy(
@@ -345,8 +461,33 @@ export function setupEnemySpawning(
           true,
           false,
           isPaused,
-          getSlowWeaponState
-        ); // elite enemy (3 HP)
+          getSlowWeaponState,
+          undefined,
+          "elite"
+        );
+      }
+    });
+  });
+
+  // Spawn charger enemies after 120 seconds (2 minutes) - they're fast and dangerous
+  let chargerController: any = null;
+  k.wait(150, () => {
+    chargerController = k.loop(spawnInterval * 1.5, () => {
+      // Spawn slightly less often than normal enemies
+      if (!isPaused()) {
+        spawnEnemy(
+          k,
+          player,
+          enemySpeed,
+          enemySize,
+          false,
+          false,
+          false,
+          isPaused,
+          getSlowWeaponState,
+          undefined,
+          "charger"
+        );
       }
     });
   });
@@ -360,5 +501,8 @@ export function setupEnemySpawning(
     strongController,
     eliteController,
     swarmController,
+    chargerController,
+    splitterController,
+    exploderController,
   };
 }

@@ -84,7 +84,9 @@ export function fireProjectile(
     k.sprite("projectile"),
     k.pos(startPos.x, startPos.y),
     k.anchor("center"),
-    k.area(),
+    k.area({
+      collisionIgnore: ["xp", "healthPoint", "projectile"],
+    }),
     k.scale(0.75, 0.75), // Scale down to 75% (12px instead of 16px)
     k.rotate(angle), // Rotate projectile to face direction
     "projectile",
@@ -140,4 +142,3 @@ export function fireProjectile(
     }
   });
 }
-

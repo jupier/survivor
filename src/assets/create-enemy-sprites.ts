@@ -368,3 +368,339 @@ export function createEliteEnemySprite(): string {
 
   return canvas.toDataURL();
 }
+
+export function createChargerEnemySprite(): string {
+  // Create a sprite for charger enemy (orange/red, fast-looking with speed lines)
+  const canvas = document.createElement("canvas");
+  canvas.width = 32;
+  canvas.height = 32;
+  const ctx = canvas.getContext("2d")!;
+
+  // Clear canvas
+  ctx.clearRect(0, 0, 32, 32);
+
+  // Monster body (orange, streamlined for speed)
+  ctx.fillStyle = "#f97316"; // Orange
+  ctx.beginPath();
+  ctx.ellipse(16, 18, 9, 11, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Streamlined head (pointed forward)
+  ctx.fillStyle = "#fb923c"; // Light orange
+  ctx.beginPath();
+  ctx.moveTo(16, 6);
+  ctx.lineTo(22, 12);
+  ctx.lineTo(16, 14);
+  ctx.lineTo(10, 12);
+  ctx.closePath();
+  ctx.fill();
+
+  // Eyes (bright red, alert)
+  ctx.fillStyle = "#dc2626"; // Red
+  ctx.beginPath();
+  ctx.arc(13, 10, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(19, 10, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eye pupils (black)
+  ctx.fillStyle = "#000000";
+  ctx.beginPath();
+  ctx.arc(13, 10, 1.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(19, 10, 1.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Speed lines (behind the enemy)
+  ctx.strokeStyle = "#f97316";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(4, 14);
+  ctx.lineTo(8, 16);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(4, 18);
+  ctx.lineTo(8, 18);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(4, 22);
+  ctx.lineTo(8, 20);
+  ctx.stroke();
+
+  // Legs/appendages (streamlined)
+  ctx.fillStyle = "#ea580c"; // Dark orange
+  ctx.fillRect(12, 24, 2, 4);
+  ctx.fillRect(18, 24, 2, 4);
+
+  return canvas.toDataURL();
+}
+
+export function createSplitterEnemySprite(): string {
+  // Create a sprite for splitter enemy (blue/cyan with visible segments/cracks)
+  const canvas = document.createElement("canvas");
+  canvas.width = 32;
+  canvas.height = 32;
+  const ctx = canvas.getContext("2d")!;
+
+  // Clear canvas
+  ctx.clearRect(0, 0, 32, 32);
+
+  // Monster body (blue, segmented appearance)
+  ctx.fillStyle = "#3b82f6"; // Blue
+  ctx.beginPath();
+  ctx.ellipse(16, 18, 10, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Segmentation lines (cracks showing it can split)
+  ctx.strokeStyle = "#1e40af"; // Dark blue
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(16, 8);
+  ctx.lineTo(16, 28);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(10, 16);
+  ctx.lineTo(22, 16);
+  ctx.stroke();
+
+  // Head (two segments)
+  ctx.fillStyle = "#60a5fa"; // Light blue
+  ctx.beginPath();
+  ctx.ellipse(12, 10, 5, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(20, 10, 5, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyes (one on each segment)
+  ctx.fillStyle = "#1e40af"; // Dark blue
+  ctx.beginPath();
+  ctx.arc(12, 10, 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(20, 10, 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eye pupils (black)
+  ctx.fillStyle = "#000000";
+  ctx.beginPath();
+  ctx.arc(12, 10, 1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(20, 10, 1, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Small cracks/segments on body
+  ctx.strokeStyle = "#1e40af";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(8, 20);
+  ctx.lineTo(12, 22);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(24, 20);
+  ctx.lineTo(20, 22);
+  ctx.stroke();
+
+  return canvas.toDataURL();
+}
+
+export function createExploderEnemySprite(): string {
+  // Create a sprite for exploder enemy (yellow/red, unstable-looking with warning patterns)
+  const canvas = document.createElement("canvas");
+  canvas.width = 32;
+  canvas.height = 32;
+  const ctx = canvas.getContext("2d")!;
+
+  // Clear canvas
+  ctx.clearRect(0, 0, 32, 32);
+
+  // Monster body (yellow, unstable blob)
+  ctx.fillStyle = "#eab308"; // Yellow
+  ctx.beginPath();
+  ctx.ellipse(16, 18, 10, 12, 0.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Warning stripes (red)
+  ctx.fillStyle = "#dc2626"; // Red
+  ctx.fillRect(10, 14, 12, 2);
+  ctx.fillRect(10, 18, 12, 2);
+  ctx.fillRect(10, 22, 12, 2);
+
+  // Head (slightly off-center for unstable look)
+  ctx.fillStyle = "#fde047"; // Light yellow
+  ctx.beginPath();
+  ctx.ellipse(17, 10, 7, 7, 0.1, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eyes (red, wide open - warning)
+  ctx.fillStyle = "#dc2626"; // Red
+  ctx.beginPath();
+  ctx.arc(13, 9, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(21, 9, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eye pupils (black, small - scared/warning look)
+  ctx.fillStyle = "#000000";
+  ctx.beginPath();
+  ctx.arc(13, 9, 1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(21, 9, 1, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Explosion sparks/particles around it
+  ctx.fillStyle = "#f97316"; // Orange
+  ctx.beginPath();
+  ctx.arc(6, 12, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(26, 12, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(8, 24, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(24, 24, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Unstable energy lines
+  ctx.strokeStyle = "#dc2626";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(4, 16);
+  ctx.lineTo(8, 18);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(28, 16);
+  ctx.lineTo(24, 18);
+  ctx.stroke();
+
+  return canvas.toDataURL();
+}
+
+export function createBossEnemySprite(): string {
+  // Create a sprite for boss enemy (large, menacing, purple/dark with multiple features)
+  const canvas = document.createElement("canvas");
+  canvas.width = 32;
+  canvas.height = 32;
+  const ctx = canvas.getContext("2d")!;
+
+  // Clear canvas
+  ctx.clearRect(0, 0, 32, 32);
+
+  // Main body (large, dark purple)
+  ctx.fillStyle = "#7c3aed"; // Purple
+  ctx.beginPath();
+  ctx.moveTo(16, 2);
+  ctx.lineTo(28, 12);
+  ctx.lineTo(28, 26);
+  ctx.lineTo(4, 26);
+  ctx.lineTo(4, 12);
+  ctx.closePath();
+  ctx.fill();
+
+  // Darker purple overlay for depth
+  ctx.fillStyle = "#5b21b6"; // Dark purple
+  ctx.beginPath();
+  ctx.moveTo(16, 2);
+  ctx.lineTo(28, 12);
+  ctx.lineTo(16, 16);
+  ctx.closePath();
+  ctx.fill();
+
+  // Head (large, menacing)
+  ctx.fillStyle = "#a78bfa"; // Light purple
+  ctx.beginPath();
+  ctx.moveTo(6, 0);
+  ctx.lineTo(26, 0);
+  ctx.lineTo(24, 8);
+  ctx.lineTo(8, 8);
+  ctx.closePath();
+  ctx.fill();
+
+  // Multiple eyes (boss has 3 eyes)
+  ctx.fillStyle = "#1e293b"; // Dark gray
+  ctx.beginPath();
+  ctx.arc(10, 4, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(16, 4, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(22, 4, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eye glows (purple)
+  ctx.fillStyle = "#9333ea"; // Bright purple
+  ctx.beginPath();
+  ctx.arc(10, 3, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(16, 3, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(22, 3, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Large mouth (menacing)
+  ctx.fillStyle = "#1f2937"; // Dark gray/black
+  ctx.beginPath();
+  ctx.ellipse(16, 12, 7, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Large teeth
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(11, 11, 2, 4);
+  ctx.fillRect(14, 11, 2, 4);
+  ctx.fillRect(17, 11, 2, 4);
+  ctx.fillRect(20, 11, 2, 4);
+
+  // Multiple spikes/horns on top
+  ctx.fillStyle = "#5b21b6"; // Dark purple
+  ctx.beginPath();
+  ctx.moveTo(4, 0);
+  ctx.lineTo(7, 3);
+  ctx.lineTo(4, 3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(12, 0);
+  ctx.lineTo(14, 2);
+  ctx.lineTo(12, 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(20, 0);
+  ctx.lineTo(18, 2);
+  ctx.lineTo(20, 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(28, 0);
+  ctx.lineTo(25, 3);
+  ctx.lineTo(28, 3);
+  ctx.closePath();
+  ctx.fill();
+
+  // Large claws/appendages on sides
+  ctx.fillStyle = "#5b21b6";
+  ctx.fillRect(0, 18, 4, 8);
+  ctx.fillRect(28, 18, 4, 8);
+
+  // Energy core/glow in center
+  ctx.fillStyle = "#c084fc"; // Bright purple
+  ctx.beginPath();
+  ctx.arc(16, 20, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#e879f9"; // Pink-purple
+  ctx.beginPath();
+  ctx.arc(16, 20, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  return canvas.toDataURL();
+}

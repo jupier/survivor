@@ -1,0 +1,82 @@
+export type PowerUpType = "speed" | "magnet" | "invincibility" | "damage";
+
+export function spawnPowerUp(
+  k: ReturnType<typeof import("kaplay").default>,
+  position: { x: number; y: number },
+  type?: PowerUpType
+): void {
+  // Random type if not specified
+  const powerUpType =
+    type ||
+    (["speed", "magnet", "invincibility", "damage"][
+      Math.floor(Math.random() * 4)
+    ] as PowerUpType);
+
+  const spriteNames: Record<PowerUpType, string> = {
+    speed: "powerup-speed",
+    magnet: "powerup-magnet",
+    invincibility: "powerup-invincibility",
+    damage: "powerup-damage",
+  };
+
+  const powerUp = k.add([
+    k.sprite(spriteNames[powerUpType]),
+    k.pos(position.x, position.y),
+    k.anchor("center"),
+    k.scale(1, 1),
+    k.area({
+      collisionIgnore: ["enemy", "projectile", "xp"],
+    }),
+    k.z(46),
+    "powerUp",
+  ]);
+
+  // Store type
+  (powerUp as any).powerUpType = powerUpType;
+
+  // Pulsing animation
+  powerUp.onUpdate(() => {
+    const pulse = 1 + Math.sin(k.time() * 6) * 0.2;
+    powerUp.scale = k.vec2(pulse, pulse);
+  });
+}
+
+export interface PowerUpState {
+  speed: { active: boolean; endTime: number };
+  magnet: { active: boolean; endTime: number };
+  invincibility: { active: boolean; endTime: number };
+  damage: { active: boolean; endTime: number };
+}
+
+export function createPowerUpState(): PowerUpState {
+  return {
+    speed: { active: false, endTime: 0 },
+    magnet: { active: false, endTime: 0 },
+    invincibility: { active: false, endTime: 0 },
+    damage: { active: false, endTime: 0 },
+  };
+}
+
+export function activatePowerUp(
+  k: ReturnType<typeof import("kaplay").default>,
+  state: PowerUpState,
+  type: PowerUpType,
+  duration: number
+): void {
+  const currentTime = k.time();
+  state[type].active = true;
+  state[type].endTime = currentTime + duration;
+}
+
+export function updatePowerUps(
+  k: ReturnType<typeof import("kaplay").default>,
+  state: PowerUpState
+): void {
+  const currentTime = k.time();
+  for (const key in state) {
+    const powerUp = state[key as PowerUpType];
+    if (powerUp.active && currentTime >= powerUp.endTime) {
+      powerUp.active = false;
+    }
+  }
+}

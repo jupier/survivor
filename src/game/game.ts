@@ -1,7 +1,12 @@
 import kaplay from "kaplay";
 import { GameState, createInitialGameState } from "./game-state";
 import { loadAllSprites, createBackground } from "./sprite-loader";
-import { createUI, updateUI, UIElements } from "./ui-manager";
+import {
+  createUI,
+  updateUI,
+  updatePowerUpDisplay,
+  UIElements,
+} from "./ui-manager";
 import {
   createPlayer,
   setupPlayerMovement,
@@ -14,6 +19,9 @@ import { showLevelUpMenu } from "./level-up-manager";
 import { showPauseMenu, hidePauseMenu, showDeathScreen } from "./menu-manager";
 import { spawnXP, spawnHealthPoint } from "./pickup-manager";
 import { loadSounds, SoundManager } from "./sound-manager";
+import { showDamageNumber } from "./damage-numbers";
+import { spawnPowerUp, updatePowerUps } from "./powerup-manager";
+import { spawnBoss } from "./enemy-manager";
 
 export class Game {
   private k: ReturnType<typeof kaplay>;
@@ -25,6 +33,9 @@ export class Game {
     strongController: any;
     eliteController: any;
     swarmController: any;
+    chargerController: any;
+    splitterController: any;
+    exploderController: any;
   } | null = null;
   private fireLoopController: any = null;
   private targetingZone: any = null;
@@ -51,7 +62,7 @@ export class Game {
     this.setupGame();
   }
 
-  private enemySpeed = 60; // pixels per second (reduced for better playability)
+  private enemySpeed = 45; // pixels per second (reduced for better playability)
   private enemySize = 24; // size of enemy sprite (24x24, scaled down from 32)
 
   private async setupGame(): Promise<void> {
@@ -76,7 +87,8 @@ export class Game {
       this.k,
       this.player,
       this.state.speed,
-      () => this.state.isPaused
+      () => this.state.isPaused,
+      this.state.powerUps
     );
 
     // Setup player collisions
@@ -111,7 +123,8 @@ export class Game {
         onHealthCollect: () => {
           this.sounds.playHealthCollect();
         },
-      }
+      },
+      this.state.powerUps
     );
 
     // Setup enemy spawning
@@ -170,6 +183,43 @@ export class Game {
 
     // Main game loop
     this.setupGameLoop();
+
+    // Spawn enemies of each type for testing
+    // this.spawnManyEnemies(50);
+  }
+
+  private spawnManyEnemies(count: number): void {
+    const enemyTypes = [
+      { isStrong: false, isElite: false, isSwarm: false }, // Normal
+      { isStrong: true, isElite: false, isSwarm: false }, // Strong
+      { isStrong: false, isElite: true, isSwarm: false }, // Elite
+      { isSwarm: true }, // Swarm (swarm enemies don't need isStrong/isElite)
+    ];
+
+    // Spawn 100 of each type
+    for (const enemyType of enemyTypes) {
+      for (let i = 0; i < count; i++) {
+        const spawnX = Math.random() * this.k.width();
+        const spawnY = Math.random() * this.k.height();
+
+        spawnEnemy(
+          this.k,
+          this.player,
+          this.enemySpeed,
+          this.enemySize,
+          enemyType.isStrong || false,
+          enemyType.isElite || false,
+          enemyType.isSwarm || false,
+          () => this.state.isPaused,
+          () => ({
+            active: this.state.slowWeaponActive,
+            effectPercentage: this.state.slowEffectPercentage,
+            zoneRadius: this.state.targetingZoneRadius,
+          }),
+          { x: spawnX, y: spawnY } // Spawn at specific position
+        );
+      }
+    }
   }
 
   private setupTargetingZone(): void {
@@ -304,7 +354,15 @@ export class Game {
     if (!(enemy as any).health) {
       (enemy as any).health = 1;
     }
-    (enemy as any).health -= 1;
+
+    const damage = 1;
+    const isCritical = Math.random() < 0.1; // 10% crit chance
+    const actualDamage = isCritical ? 2 : damage;
+
+    (enemy as any).health -= actualDamage;
+
+    // Show damage number
+    showDamageNumber(this.k, enemy.pos, actualDamage, isCritical);
 
     // Play hit sound
     if ((enemy as any).health > 0) {
@@ -313,22 +371,111 @@ export class Game {
 
     // Check if enemy is dead
     if ((enemy as any).health <= 0) {
+      // Handle special enemy types
+      const enemyType = (enemy as any).enemyType;
+
+      if (enemyType === "splitter") {
+        // Spawn 2 smaller enemies
+        for (let i = 0; i < 2; i++) {
+          const angle = (Math.PI * 2 * i) / 2;
+          const offsetX = Math.cos(angle) * 30;
+          const offsetY = Math.sin(angle) * 30;
+          spawnEnemy(
+            this.k,
+            this.player,
+            this.enemySpeed,
+            this.enemySize,
+            false,
+            false,
+            false,
+            () => this.state.isPaused,
+            () => ({
+              active: this.state.slowWeaponActive,
+              effectPercentage: this.state.slowEffectPercentage,
+              zoneRadius: this.state.targetingZoneRadius,
+            }),
+            { x: enemy.pos.x + offsetX, y: enemy.pos.y + offsetY },
+            "normal"
+          );
+        }
+      } else if (enemyType === "exploder") {
+        // Damage nearby enemies
+        const allEnemies = this.k.get("enemy");
+        const explosionRadius = 60;
+        for (const otherEnemy of allEnemies) {
+          if (otherEnemy === enemy) continue;
+          const dx = otherEnemy.pos.x - enemy.pos.x;
+          const dy = otherEnemy.pos.y - enemy.pos.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < explosionRadius) {
+            (otherEnemy as any).health -= 1;
+            showDamageNumber(this.k, otherEnemy.pos, 1, false);
+          }
+        }
+      }
+
       // Play death sound
       this.sounds.playEnemyDeath();
 
       // Spawn XP point at enemy position
       spawnXP(this.k, enemy.pos);
 
-      // Rare chance to spawn health point (10% chance)
-      if (Math.random() < 0.1) {
+      // Boss drops guaranteed health + extra XP
+      if (enemyType === "boss") {
         spawnHealthPoint(this.k, enemy.pos);
+        // Spawn extra XP
+        for (let i = 0; i < 5; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = 20 + Math.random() * 30;
+          spawnXP(this.k, {
+            x: enemy.pos.x + Math.cos(angle) * dist,
+            y: enemy.pos.y + Math.sin(angle) * dist,
+          });
+        }
+        // Boss always drops a power-up
+        spawnPowerUp(this.k, enemy.pos);
+      } else {
+        // Rare chance to spawn health point (10% chance)
+        if (Math.random() < 0.1) {
+          spawnHealthPoint(this.k, enemy.pos);
+        }
+        // 5% chance to spawn power-up
+        if (Math.random() < 0.05) {
+          spawnPowerUp(this.k, enemy.pos);
+        }
       }
 
       // Increment kill counter
       this.state.enemiesKilled++;
 
-      // Destroy the enemy
-      enemy.destroy();
+      // Simple death animation: fade out and scale down
+      const deathDuration = 0.2; // 0.2 seconds
+      const originalScale = enemy.scale.x;
+      const originalOpacity = enemy.opacity ?? 1;
+
+      // Disable enemy movement during death animation
+      // Don't remove area component as it causes collision system errors
+      (enemy as any).isDying = true;
+
+      // Remove enemy tag to prevent collisions during death animation
+      enemy.untag("enemy");
+
+      // Animate scale down and fade out
+      this.k
+        .tween(
+          enemy.scale.x,
+          0,
+          deathDuration,
+          (val) => {
+            enemy.scale = this.k.vec2(val, val);
+            const progress = 1 - val / originalScale;
+            enemy.opacity = originalOpacity * (1 - progress);
+          },
+          this.k.easings.easeInQuad
+        )
+        .onEnd(() => {
+          enemy.destroy();
+        });
     }
   }
 
@@ -343,6 +490,9 @@ export class Game {
       if (this.aoeWeapon) {
         this.aoeWeapon.update();
       }
+
+      // Update power-ups
+      updatePowerUps(this.k, this.state.powerUps);
 
       // Update timer
       if (this.state.gameTime > 0) {
@@ -399,7 +549,7 @@ export class Game {
 
           // Restart enemy spawn loops with new interval
           if (this.enemySpawnControllers) {
-            // Normal enemies
+            // Normal enemies (only normal type)
             this.enemySpawnControllers.normalController.cancel();
             this.enemySpawnControllers.normalController = this.k.loop(
               this.state.enemySpawnInterval,
@@ -418,7 +568,9 @@ export class Game {
                       active: this.state.slowWeaponActive,
                       effectPercentage: this.state.slowEffectPercentage,
                       zoneRadius: this.state.targetingZoneRadius,
-                    })
+                    }),
+                    undefined,
+                    "normal"
                   );
                 }
               }
@@ -444,7 +596,67 @@ export class Game {
                         active: this.state.slowWeaponActive,
                         effectPercentage: this.state.slowEffectPercentage,
                         zoneRadius: this.state.targetingZoneRadius,
-                      })
+                      }),
+                      undefined,
+                      "strong"
+                    );
+                  }
+                }
+              );
+            }
+
+            // Splitter enemies (if they've started spawning)
+            if (this.enemySpawnControllers.splitterController) {
+              this.enemySpawnControllers.splitterController.cancel();
+              this.enemySpawnControllers.splitterController = this.k.loop(
+                this.state.enemySpawnInterval * 2,
+                () => {
+                  if (!this.state.isPaused) {
+                    spawnEnemy(
+                      this.k,
+                      this.player,
+                      this.enemySpeed,
+                      this.enemySize,
+                      false,
+                      false,
+                      false,
+                      () => this.state.isPaused,
+                      () => ({
+                        active: this.state.slowWeaponActive,
+                        effectPercentage: this.state.slowEffectPercentage,
+                        zoneRadius: this.state.targetingZoneRadius,
+                      }),
+                      undefined,
+                      "splitter"
+                    );
+                  }
+                }
+              );
+            }
+
+            // Exploder enemies (if they've started spawning)
+            if (this.enemySpawnControllers.exploderController) {
+              this.enemySpawnControllers.exploderController.cancel();
+              this.enemySpawnControllers.exploderController = this.k.loop(
+                this.state.enemySpawnInterval * 2,
+                () => {
+                  if (!this.state.isPaused) {
+                    spawnEnemy(
+                      this.k,
+                      this.player,
+                      this.enemySpeed,
+                      this.enemySize,
+                      false,
+                      false,
+                      false,
+                      () => this.state.isPaused,
+                      () => ({
+                        active: this.state.slowWeaponActive,
+                        effectPercentage: this.state.slowEffectPercentage,
+                        zoneRadius: this.state.targetingZoneRadius,
+                      }),
+                      undefined,
+                      "exploder"
                     );
                   }
                 }
@@ -471,7 +683,38 @@ export class Game {
                         active: this.state.slowWeaponActive,
                         effectPercentage: this.state.slowEffectPercentage,
                         zoneRadius: this.state.targetingZoneRadius,
-                      })
+                      }),
+                      undefined,
+                      "elite"
+                    );
+                  }
+                }
+              );
+            }
+
+            // Charger enemies (if they've started spawning)
+            if (this.enemySpawnControllers.chargerController) {
+              this.enemySpawnControllers.chargerController.cancel();
+              this.enemySpawnControllers.chargerController = this.k.loop(
+                this.state.enemySpawnInterval * 1.5,
+                () => {
+                  if (!this.state.isPaused) {
+                    spawnEnemy(
+                      this.k,
+                      this.player,
+                      this.enemySpeed,
+                      this.enemySize,
+                      false,
+                      false,
+                      false,
+                      () => this.state.isPaused,
+                      () => ({
+                        active: this.state.slowWeaponActive,
+                        effectPercentage: this.state.slowEffectPercentage,
+                        zoneRadius: this.state.targetingZoneRadius,
+                      }),
+                      undefined,
+                      "charger"
                     );
                   }
                 }
@@ -506,6 +749,29 @@ export class Game {
               );
             }
           }
+        }
+
+        // Spawn boss every 2 minutes (120 seconds)
+        if (!(this as any).lastBossSpawnTime) {
+          (this as any).lastBossSpawnTime = 0;
+        }
+        if (
+          gameTimeElapsed >= 120 &&
+          gameTimeElapsed - (this as any).lastBossSpawnTime >= 120
+        ) {
+          (this as any).lastBossSpawnTime = gameTimeElapsed;
+          spawnBoss(
+            this.k,
+            this.player,
+            this.enemySpeed,
+            this.enemySize,
+            () => this.state.isPaused,
+            () => ({
+              active: this.state.slowWeaponActive,
+              effectPercentage: this.state.slowEffectPercentage,
+              zoneRadius: this.state.targetingZoneRadius,
+            })
+          );
         }
 
         // Check for time up
@@ -551,6 +817,7 @@ export class Game {
       }
       if (currentTime - (this as any).lastUIUpdateTime >= 0.1) {
         updateUI(this.ui, this.state);
+        updatePowerUpDisplay(this.k, this.ui, this.state.powerUps);
         (this as any).lastUIUpdateTime = currentTime;
       }
     });

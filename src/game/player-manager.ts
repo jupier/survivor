@@ -1,3 +1,5 @@
+import { activatePowerUp, PowerUpState } from "./powerup-manager";
+
 export function createPlayer(k: ReturnType<typeof import("kaplay").default>): {
   player: any;
   collisionZone: any;
@@ -42,7 +44,10 @@ export function setupPlayerMovement(
   k: ReturnType<typeof import("kaplay").default>,
   player: any,
   speed: number,
-  isPaused: () => boolean
+  isPaused: () => boolean,
+  powerUps?: {
+    speed: { active: boolean; endTime: number };
+  }
 ): void {
   // Track current direction and movement state
   let currentDirection: "up" | "down" | "left" | "right" = "down";
@@ -54,7 +59,9 @@ export function setupPlayerMovement(
       return;
     }
 
-    const moveSpeed = speed * k.dt();
+    // Apply speed power-up multiplier
+    const speedMultiplier = powerUps && powerUps.speed.active ? 1.5 : 1;
+    const moveSpeed = speed * speedMultiplier * k.dt();
     let moveX = 0;
     let moveY = 0;
 
@@ -150,24 +157,29 @@ export function setupPlayerCollisions(
     onPlayerHit?: () => void;
     onXPCollect?: () => void;
     onHealthCollect?: () => void;
-  }
+  },
+  powerUps?: PowerUpState
 ): void {
   let isInvulnerable = false; // Prevent multiple hits in quick succession
 
   // Handle player collision with enemies
   player.onCollide("enemy", (enemy: any) => {
-    if (state.isPaused || isInvulnerable) {
+    if (
+      state.isPaused ||
+      isInvulnerable ||
+      (powerUps && powerUps.invincibility.active)
+    ) {
       return;
     }
 
     state.playerHealth -= 1;
     callbacks.onHealthChange(state.playerHealth);
-    
+
     // Play player hit sound
     if (sounds?.onPlayerHit) {
       sounds.onPlayerHit();
     }
-    
+
     enemy.destroy(); // Destroy enemy on contact
 
     // Hit animation: flash opacity and scale shake
@@ -212,12 +224,12 @@ export function setupPlayerCollisions(
   // Handle player collision with XP points
   player.onCollide("xp", (xp: any) => {
     state.playerExperience += 10; // Gain 10 XP per point
-    
+
     // Play XP collect sound
     if (sounds?.onXPCollect) {
       sounds.onXPCollect();
     }
-    
+
     callbacks.onExperienceGain();
     xp.destroy();
 
@@ -237,7 +249,7 @@ export function setupPlayerCollisions(
     if (state.playerHealth < state.maxHealth) {
       state.playerHealth = Math.min(state.maxHealth, state.playerHealth + 1);
       callbacks.onHealthChange(state.playerHealth);
-      
+
       // Play health collect sound
       if (sounds?.onHealthCollect) {
         sounds.onHealthCollect();
@@ -245,4 +257,59 @@ export function setupPlayerCollisions(
     }
     healthPoint.destroy();
   });
+
+  // Handle player collision with power-ups
+  if (powerUps) {
+    player.onCollide("powerUp", (powerUp: any) => {
+      const powerUpType = (powerUp as any).powerUpType;
+      const durations: Record<string, number> = {
+        speed: 5, // 5 seconds
+        magnet: 8, // 8 seconds
+        invincibility: 3, // 3 seconds
+        damage: 5, // 5 seconds
+      };
+
+      if (powerUpType && durations[powerUpType]) {
+        activatePowerUp(k, powerUps, powerUpType, durations[powerUpType]);
+      }
+
+      powerUp.destroy();
+    });
+
+    // Magnet effect: attract XP and health points
+    k.onUpdate(() => {
+      if (powerUps.magnet.active) {
+        const magnetRadius = 150;
+        const magnetSpeed = 200;
+
+        // Attract XP
+        const xpPoints = k.get("xp");
+        for (const xp of xpPoints) {
+          const dx = player.pos.x - xp.pos.x;
+          const dy = player.pos.y - xp.pos.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < magnetRadius && dist > 0) {
+            const moveX = (dx / dist) * magnetSpeed * k.dt();
+            const moveY = (dy / dist) * magnetSpeed * k.dt();
+            xp.pos.x += moveX;
+            xp.pos.y += moveY;
+          }
+        }
+
+        // Attract health points
+        const healthPoints = k.get("healthPoint");
+        for (const hp of healthPoints) {
+          const dx = player.pos.x - hp.pos.x;
+          const dy = player.pos.y - hp.pos.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < magnetRadius && dist > 0) {
+            const moveX = (dx / dist) * magnetSpeed * k.dt();
+            const moveY = (dy / dist) * magnetSpeed * k.dt();
+            hp.pos.x += moveX;
+            hp.pos.y += moveY;
+          }
+        }
+      }
+    });
+  }
 }

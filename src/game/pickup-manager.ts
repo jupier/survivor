@@ -8,7 +8,9 @@ export function spawnXP(
     k.sprite("xp"),
     k.pos(position.x, position.y),
     k.anchor("center"),
-    k.area(),
+    k.area({
+      collisionIgnore: ["enemy", "projectile", "xp"],
+    }),
     k.scale(0.75, 0.75), // Scale down to 75% (12px instead of 16px)
     "xp",
   ]);
@@ -23,7 +25,9 @@ export function spawnHealthPoint(
     k.sprite("health"),
     k.pos(position.x, position.y),
     k.anchor("center"),
-    k.area(),
+    k.area({
+      collisionIgnore: ["enemy", "projectile", "xp"],
+    }),
     k.scale(0.75, 0.75), // Scale down to 75% (12px instead of 16px)
     "healthPoint",
   ]);

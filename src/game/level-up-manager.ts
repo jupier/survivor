@@ -35,29 +35,27 @@ export function showLevelUpMenu(
     { id: "aoeSpeed", text: "Increase AOE Speed" },
     { id: "increaseHealth", text: "Increase Max Health" },
   ];
-  
+
   // Filter out options based on weapon states:
   // - Remove "slowWeapon" if already active
   // - Remove "slowEffect" if slow weapon is not active
   // - Remove "aoeWeapon" if already active
   // - Remove "aoeSpeed" if AOE weapon is not active
-  const filteredOptions = allOptions.filter(
-    (opt) => {
-      if (opt.id === "slowWeapon") {
-        return !isSlowWeaponActive; // Only show if not already active
-      }
-      if (opt.id === "slowEffect") {
-        return isSlowWeaponActive; // Only show if slow weapon is active
-      }
-      if (opt.id === "aoeWeapon") {
-        return !isAOEWeaponActive; // Only show if not already active
-      }
-      if (opt.id === "aoeSpeed") {
-        return isAOEWeaponActive; // Only show if AOE weapon is active
-      }
-      return true; // Show all other options
+  const filteredOptions = allOptions.filter((opt) => {
+    if (opt.id === "slowWeapon") {
+      return !isSlowWeaponActive; // Only show if not already active
     }
-  );
+    if (opt.id === "slowEffect") {
+      return isSlowWeaponActive; // Only show if slow weapon is active
+    }
+    if (opt.id === "aoeWeapon") {
+      return !isAOEWeaponActive; // Only show if not already active
+    }
+    if (opt.id === "aoeSpeed") {
+      return isAOEWeaponActive; // Only show if AOE weapon is active
+    }
+    return true; // Show all other options
+  });
 
   // Randomly select 3 options from the filtered list
   const options = randomSelect(filteredOptions, 3);
@@ -102,11 +100,7 @@ export function showLevelUpMenu(
     // Option background
     const optionBg = k.add([
       k.rect(menuWidth - 40, optionHeight),
-      k.color(
-        isEnabled ? 60 : 40,
-        isEnabled ? 60 : 40,
-        isEnabled ? 60 : 40
-      ),
+      k.color(isEnabled ? 60 : 40, isEnabled ? 60 : 40, isEnabled ? 60 : 40),
       k.pos(menuX + 20, optionY),
       k.anchor("topleft"),
       k.fixed(),
@@ -143,4 +137,3 @@ export function showLevelUpMenu(
     }
   });
 }
-

@@ -1,4 +1,5 @@
 import { GameState } from "./game-state";
+import { PowerUpState, PowerUpType } from "./powerup-manager";
 
 export interface UIElements {
   levelText: any;
@@ -13,6 +14,8 @@ export interface UIElements {
   zoneStatText: any;
   fireRateStatText: any;
   fpsText: any;
+  powerUpContainer: any;
+  powerUpTexts: Map<string, any>;
 }
 
 export function createUI(
@@ -209,6 +212,10 @@ export function createUI(
     k.z(110),
   ]);
 
+  // Power-up display will be created dynamically
+  // Store the starting Y position for power-up display
+  const powerUpStartY = currentY + 10;
+
   return {
     levelText,
     timerText,
@@ -222,6 +229,8 @@ export function createUI(
     zoneStatText,
     fireRateStatText,
     fpsText,
+    powerUpContainer: { pos: { x: uiPadding, y: powerUpStartY } },
+    powerUpTexts: new Map(),
   };
 }
 
@@ -265,4 +274,80 @@ export function updateUI(ui: UIElements, state: GameState): void {
   ui.fireRateStatText.text = `Fire Rate: ${(1 / state.fireInterval).toFixed(
     1
   )}/s`;
+}
+
+export function updatePowerUpDisplay(
+  k: ReturnType<typeof import("kaplay").default>,
+  ui: UIElements,
+  powerUps: PowerUpState
+): void {
+  const powerUpNames: Record<PowerUpType, string> = {
+    speed: "Speed Boost",
+    magnet: "Magnet",
+    invincibility: "Invincibility",
+    damage: "Damage Boost",
+  };
+
+  const powerUpColors: Record<PowerUpType, [number, number, number]> = {
+    speed: [0, 255, 255], // Cyan
+    magnet: [255, 0, 255], // Magenta
+    invincibility: [255, 255, 0], // Yellow
+    damage: [255, 0, 0], // Red
+  };
+
+  const currentTime = k.time();
+  const lineHeight = 22;
+  const startX = ui.powerUpContainer.pos.x;
+  const startY = ui.powerUpContainer.pos.y;
+  let yOffset = 0;
+
+  // Track which power-ups are currently active
+  const activeTypes: Set<PowerUpType> = new Set();
+  
+  for (const key in powerUps) {
+    const powerUpType = key as PowerUpType;
+    const powerUp = powerUps[powerUpType];
+    
+    if (powerUp.active && currentTime < powerUp.endTime) {
+      activeTypes.add(powerUpType);
+      const timeRemaining = powerUp.endTime - currentTime;
+      const timeString = timeRemaining > 0 
+        ? timeRemaining.toFixed(1) + "s"
+        : "0.0s";
+
+      // Get or create text element for this power-up
+      if (!ui.powerUpTexts.has(powerUpType)) {
+        const textElement = k.add([
+          k.text("", { size: 16 }),
+          k.color(...powerUpColors[powerUpType]),
+          k.pos(startX, startY + yOffset),
+          k.anchor("topleft"),
+          k.fixed(),
+          k.z(111),
+        ]);
+        ui.powerUpTexts.set(powerUpType, textElement);
+      }
+
+      const textElement = ui.powerUpTexts.get(powerUpType);
+      textElement.text = `${powerUpNames[powerUpType]}: ${timeString}`;
+      textElement.pos.x = startX;
+      textElement.pos.y = startY + yOffset;
+      textElement.opacity = 1;
+      yOffset += lineHeight;
+    } else {
+      // Hide inactive power-ups
+      if (ui.powerUpTexts.has(powerUpType)) {
+        const textElement = ui.powerUpTexts.get(powerUpType);
+        textElement.opacity = 0;
+      }
+    }
+  }
+
+  // Clean up text elements for power-ups that are no longer active
+  for (const [powerUpType, textElement] of ui.powerUpTexts.entries()) {
+    if (!activeTypes.has(powerUpType)) {
+      textElement.destroy();
+      ui.powerUpTexts.delete(powerUpType);
+    }
+  }
 }

@@ -1,10 +1,12 @@
+import { PowerUpState, createPowerUpState } from "./powerup-manager";
+
 export interface GameState {
   // Player stats
   speed: number;
   fireInterval: number;
   projectileCount: number;
   targetingZoneRadius: number;
-  
+
   // Slow weapon (slows enemies in targeting zone)
   slowWeaponActive: boolean;
   slowEffectPercentage: number; // Percentage of speed reduction (0-100)
@@ -28,6 +30,9 @@ export interface GameState {
   // Game status
   isPaused: boolean;
   enemiesKilled: number;
+
+  // Power-ups
+  powerUps: PowerUpState;
 }
 
 export function createInitialGameState(): GameState {
@@ -50,6 +55,6 @@ export function createInitialGameState(): GameState {
     lastSpawnRateIncrease: 0,
     isPaused: false,
     enemiesKilled: 0,
+    powerUps: createPowerUpState(),
   };
 }
-
