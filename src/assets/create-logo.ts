@@ -154,4 +154,3 @@ export function createLogoIcon(): string {
 
   return canvas.toDataURL();
 }
-

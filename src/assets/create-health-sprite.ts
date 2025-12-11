@@ -13,16 +13,16 @@ export function createHealthSprite(): string {
   // Heart shape - draw two circles and a triangle
   ctx.fillStyle = "#ff4444"; // Bright red
   ctx.beginPath();
-  
+
   // Left circle (top left of heart)
   ctx.arc(5, 5, 3.5, 0, Math.PI * 2);
   ctx.fill();
-  
+
   // Right circle (top right of heart)
   ctx.beginPath();
   ctx.arc(11, 5, 3.5, 0, Math.PI * 2);
   ctx.fill();
-  
+
   // Bottom triangle (point of heart)
   ctx.beginPath();
   ctx.moveTo(8, 13);
@@ -51,5 +51,3 @@ export function createHealthSprite(): string {
 
   return canvas.toDataURL();
 }
-
-

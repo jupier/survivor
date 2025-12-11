@@ -213,4 +213,3 @@ export function createDamagePowerUpSprite(): string {
 
   return canvas.toDataURL();
 }
-

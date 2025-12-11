@@ -64,11 +64,11 @@ export function createNormalEnemySprite(): string {
   ctx.moveTo(22, 4);
   ctx.lineTo(20, 8);
   ctx.lineTo(22, 8);
-      ctx.closePath();
-      ctx.fill();
+  ctx.closePath();
+  ctx.fill();
 
-      return canvas.toDataURL();
-    }
+  return canvas.toDataURL();
+}
 
 export function createSwarmEnemySprite(): string {
   // Create a sprite for swarm enemy (smaller, faster-looking enemy, cyan/teal color)

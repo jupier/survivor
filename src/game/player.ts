@@ -8,7 +8,12 @@ export class Player {
   private readonly size: number;
   private readonly speed: number;
 
-  constructor(initialX: number, initialY: number, size: number = 20, speed: number = 5) {
+  constructor(
+    initialX: number,
+    initialY: number,
+    size: number = 20,
+    speed: number = 5
+  ) {
     this.position = { x: initialX, y: initialY };
     this.size = size;
     this.speed = speed;
@@ -43,7 +48,7 @@ export class Player {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = '#4a9eff';
+    ctx.fillStyle = "#4a9eff";
     ctx.fillRect(
       this.position.x - this.size / 2,
       this.position.y - this.size / 2,
@@ -52,4 +57,3 @@ export class Player {
     );
   }
 }
-

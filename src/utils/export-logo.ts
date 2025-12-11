@@ -24,7 +24,9 @@ export function downloadLogoIcon(): void {
 // Function to set the logo as favicon
 export function setLogoAsFavicon(): void {
   const iconDataUrl = createLogoIcon();
-  const link = document.querySelector("link[rel*='icon']") as HTMLLinkElement || document.createElement("link");
+  const link =
+    (document.querySelector("link[rel*='icon']") as HTMLLinkElement) ||
+    document.createElement("link");
   link.type = "image/png";
   link.rel = "shortcut icon";
   link.href = iconDataUrl;
@@ -35,4 +37,3 @@ export function setLogoAsFavicon(): void {
 if (typeof window !== "undefined") {
   setLogoAsFavicon();
 }
-

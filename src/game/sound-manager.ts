@@ -91,16 +91,16 @@ export async function loadSounds(): Promise<SoundManager> {
     try {
       // Resume audio context if suspended (browser autoplay policy)
       await resumeAudioContext();
-      
+
       const source = audioContext.createBufferSource();
       const gainNode = audioContext.createGain();
-      
+
       source.buffer = buffer;
       gainNode.gain.value = volume;
-      
+
       source.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       source.start(0);
     } catch (e) {
       // Silently fail if audio context is not available
@@ -125,4 +125,3 @@ export async function loadSounds(): Promise<SoundManager> {
     setSFXVolume,
   };
 }
-
