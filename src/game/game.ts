@@ -24,6 +24,11 @@ import { spawnPowerUp, updatePowerUps } from "./powerup-manager";
 import { spawnBoss } from "./enemy-manager";
 import { getLevelConfig, LevelConfig } from "./level-config";
 import { Z_INDEX } from "./z-index";
+import {
+  showAdminMenu,
+  hideAdminMenu,
+  updateAllButtonTexts,
+} from "./admin-menu-manager";
 
 export class Game {
   private k: ReturnType<typeof kaplay>;
@@ -49,6 +54,7 @@ export class Game {
   } | null = null;
   private sounds!: SoundManager;
   private isTransitioning: boolean = false;
+  private isAdminMenuOpen: boolean = false;
 
   constructor(container: HTMLElement) {
     const width = Math.min(window.innerWidth, 1200);
@@ -192,11 +198,46 @@ export class Game {
 
     // Handle ESC key to pause/unpause
     this.k.onKeyPress("escape", () => {
+      if (this.isAdminMenuOpen) {
+        return; // Don't pause if admin menu is open
+      }
       this.state.isPaused = !this.state.isPaused;
       if (this.state.isPaused) {
         showPauseMenu(this.k);
       } else {
         hidePauseMenu(this.k);
+      }
+    });
+
+    // Handle F2 key to toggle admin menu
+    this.k.onKeyPress("f2", () => {
+      try {
+        if (this.isAdminMenuOpen) {
+          hideAdminMenu(this.k);
+          this.isAdminMenuOpen = false;
+          this.state.isPaused = false;
+        } else {
+          this.state.isPaused = true;
+          this.isAdminMenuOpen = true;
+          showAdminMenu(this.k, this.state, {
+            onUpgrade: (upgradeType: string) => {
+              this.handleAdminUpgrade(upgradeType);
+            },
+            onLevelChange: (levelNumber: number) => {
+              this.handleAdminLevelChange(levelNumber);
+            },
+            onClose: () => {
+              hideAdminMenu(this.k);
+              this.isAdminMenuOpen = false;
+              this.state.isPaused = false;
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Error in admin menu toggle:", error);
+        // Reset state on error
+        this.isAdminMenuOpen = false;
+        this.state.isPaused = false;
       }
     });
 
@@ -509,8 +550,8 @@ export class Game {
 
   private setupGameLoop(): void {
     this.k.onUpdate(() => {
-      // Skip updates if game is paused
-      if (this.state.isPaused) {
+      // Skip updates if game is paused (but allow admin menu to stay open)
+      if (this.state.isPaused && !this.isAdminMenuOpen) {
         return;
       }
 
@@ -1124,6 +1165,169 @@ export class Game {
           if (messageText.exists()) messageText.destroy();
         });
     });
+  }
+
+  private handleAdminUpgrade(upgradeType: string): void {
+    try {
+      if (upgradeType === "speed") {
+        this.state.speed = Math.round(this.state.speed * 1.2); // 20% faster
+      } else if (upgradeType === "fireSpeed") {
+        this.state.fireInterval = Math.max(0.1, this.state.fireInterval * 0.7); // 30% faster
+        // Cancel old loop and start new one with updated interval
+        if (this.fireLoopController) {
+          try {
+            this.fireLoopController.cancel();
+          } catch (e) {
+            // Controller might already be cancelled
+          }
+        }
+        this.setupAutoFire();
+      } else if (upgradeType === "projectileCount") {
+        this.state.projectileCount += 1;
+      } else if (upgradeType === "targetingZone") {
+        this.state.targetingZoneRadius = Math.round(
+          this.state.targetingZoneRadius * 1.3
+        ); // 30% larger
+        // Update targeting zone visual
+        if (this.targetingZone && this.targetingZone.exists()) {
+          const baseSpriteSize = 300;
+          const newScale =
+            (this.state.targetingZoneRadius * 2) / baseSpriteSize;
+          this.targetingZone.scale = this.k.vec2(newScale, newScale);
+        }
+      } else if (upgradeType === "increaseHealth") {
+        this.state.maxHealth += 1;
+        this.state.playerHealth += 1; // Also restore health
+      } else if (upgradeType === "slowWeapon") {
+        this.state.slowWeaponActive = !this.state.slowWeaponActive;
+      } else if (upgradeType === "slowEffect") {
+        if (this.state.slowWeaponActive) {
+          this.state.slowEffectPercentage = Math.min(
+            80,
+            this.state.slowEffectPercentage + 10
+          ); // Increase by 10%, max 80%
+        }
+      } else if (upgradeType === "aoeWeapon") {
+        this.state.aoeWeaponActive = !this.state.aoeWeaponActive;
+      } else if (upgradeType === "aoeSpeed") {
+        this.state.aoeWeaponCooldown = Math.max(
+          0.1,
+          this.state.aoeWeaponCooldown * 0.8
+        ); // 20% faster
+      }
+    } catch (error) {
+      console.error("Error applying admin upgrade:", error);
+    }
+
+    // Refresh admin menu to show updated values
+    // For conditional buttons (slowEffect, aoeSpeed), we need to recreate the menu
+    // For other buttons, just update the text
+    if (this.isAdminMenuOpen) {
+      // Check if we need to recreate menu (when slow/aoe weapons are toggled)
+      const needsRecreate =
+        upgradeType === "slowWeapon" || upgradeType === "aoeWeapon";
+
+      if (needsRecreate) {
+        // Recreate menu to show/hide conditional buttons
+        hideAdminMenu(this.k);
+        this.k.wait(0.05, () => {
+          if (this.isAdminMenuOpen) {
+            showAdminMenu(this.k, this.state, {
+              onUpgrade: (upgradeType: string) => {
+                this.handleAdminUpgrade(upgradeType);
+              },
+              onLevelChange: (levelNumber: number) => {
+                this.handleAdminLevelChange(levelNumber);
+              },
+              onClose: () => {
+                hideAdminMenu(this.k);
+                this.isAdminMenuOpen = false;
+                this.state.isPaused = false;
+              },
+            });
+          }
+        });
+      } else {
+        // Just update button texts
+        updateAllButtonTexts(this.state);
+      }
+    }
+  }
+
+  private handleAdminLevelChange(levelNumber: number): void {
+    if (levelNumber === this.state.currentLevel) {
+      return; // Already on this level
+    }
+
+    // Prevent multiple transitions
+    if (this.isTransitioning) {
+      return;
+    }
+
+    this.isTransitioning = true;
+    this.state.currentLevel = levelNumber;
+    this.currentLevelConfig = getLevelConfig(levelNumber);
+
+    // Reset game time for new level
+    this.state.gameTime = this.currentLevelConfig.gameTime;
+    (this as any).lastBossSpawnTime = 0;
+    this.state.lastSpawnRateIncrease = 0;
+
+    // Reset enemy spawn interval based on level
+    this.state.enemySpawnInterval =
+      1 * this.currentLevelConfig.enemySpawnIntervalMultiplier;
+
+    // Change background
+    createBackground(this.k, this.state.currentLevel);
+
+    // Clear all existing enemies
+    const allEnemies = this.k.get("enemy");
+    for (const enemy of allEnemies) {
+      enemy.destroy();
+    }
+
+    // Restart enemy spawning with new level multipliers
+    if (this.enemySpawnControllers) {
+      // Cancel all existing controllers
+      if (this.enemySpawnControllers.normalController)
+        this.enemySpawnControllers.normalController.cancel();
+      if (this.enemySpawnControllers.strongController)
+        this.enemySpawnControllers.strongController.cancel();
+      if (this.enemySpawnControllers.eliteController)
+        this.enemySpawnControllers.eliteController.cancel();
+      if (this.enemySpawnControllers.swarmController)
+        this.enemySpawnControllers.swarmController.cancel();
+      if (this.enemySpawnControllers.chargerController)
+        this.enemySpawnControllers.chargerController.cancel();
+      if (this.enemySpawnControllers.splitterController)
+        this.enemySpawnControllers.splitterController.cancel();
+      if (this.enemySpawnControllers.exploderController)
+        this.enemySpawnControllers.exploderController.cancel();
+    }
+
+    this.enemySpawnControllers = setupEnemySpawning(
+      this.k,
+      this.player,
+      this.enemySpeed,
+      this.enemySize,
+      this.state.enemySpawnInterval,
+      () => this.state.isPaused,
+      () => ({
+        active: this.state.slowWeaponActive,
+        effectPercentage: this.state.slowEffectPercentage,
+        zoneRadius: this.state.targetingZoneRadius,
+      }),
+      {
+        speedMultiplier: this.currentLevelConfig.enemySpeedMultiplier,
+        healthMultiplier: this.currentLevelConfig.enemyHealthMultiplier,
+      }
+    );
+
+    // Close admin menu and reset transition flag
+    hideAdminMenu(this.k);
+    this.isAdminMenuOpen = false;
+    this.state.isPaused = false;
+    this.isTransitioning = false;
   }
 
   private handlePlayerDeath(): void {
