@@ -10,6 +10,8 @@ import {
   createBossEnemySprite,
 } from "../assets/create-enemy-sprites";
 import { createBackgroundPattern } from "../assets/create-background-sprite";
+import { getLevelConfig } from "./level-config";
+import { Z_INDEX } from "./z-index";
 import { createXPSprite } from "../assets/create-xp-sprite";
 import { createHealthSprite } from "../assets/create-health-sprite";
 import { createProjectileSprite } from "../assets/create-projectile-sprite";
@@ -70,8 +72,9 @@ export async function loadAllSprites(
   const bossEnemySpriteUrl = createBossEnemySprite();
   await k.loadSprite("enemy-boss", bossEnemySpriteUrl);
 
-  // Load other sprites
-  const backgroundPatternUrl = createBackgroundPattern();
+  // Load other sprites (background will be loaded per level)
+  // Initial background for level 1
+  const backgroundPatternUrl = createBackgroundPattern("#2a2a3a");
   await k.loadSprite("background", backgroundPatternUrl);
 
   const xpSpriteUrl = createXPSprite();
@@ -100,19 +103,41 @@ export async function loadAllSprites(
   await k.loadSprite("powerup-damage", damagePowerUpSpriteUrl);
 }
 
-export function createBackground(k: ReturnType<typeof import("kaplay").default>): void {
-  const tileSize = 64;
-  const tilesX = Math.ceil(k.width() / tileSize) + 1;
-  const tilesY = Math.ceil(k.height() / tileSize) + 1;
-  for (let x = 0; x < tilesX; x++) {
-    for (let y = 0; y < tilesY; y++) {
-      k.add([
-        k.sprite("background"),
-        k.pos(x * tileSize, y * tileSize),
-        k.anchor("topleft"),
-        k.z(0),
-      ]);
-    }
-  }
-}
+export function createBackground(
+  k: ReturnType<typeof import("kaplay").default>,
+  levelNumber: number = 1
+): void {
+  const levelConfig = getLevelConfig(levelNumber);
 
+  // Remove existing background tiles
+  const existingBackgrounds = k.get("background");
+  for (const bg of existingBackgrounds) {
+    bg.destroy();
+  }
+
+  // Create new background pattern for this level
+  const backgroundPatternUrl = createBackgroundPattern(
+    levelConfig.backgroundPatternColor
+  );
+
+  // Unload old background sprite and load new one
+  k.loadSprite("background", backgroundPatternUrl).then(() => {
+    const tileSize = 64;
+    const tilesX = Math.ceil(k.width() / tileSize) + 1;
+    const tilesY = Math.ceil(k.height() / tileSize) + 1;
+    for (let x = 0; x < tilesX; x++) {
+      for (let y = 0; y < tilesY; y++) {
+        k.add([
+          k.sprite("background"),
+          k.pos(x * tileSize, y * tileSize),
+          k.anchor("topleft"),
+          k.z(Z_INDEX.BACKGROUND),
+          "background",
+        ]);
+      }
+    }
+  });
+
+  // Update canvas background color
+  k.setBackground(levelConfig.backgroundColor);
+}

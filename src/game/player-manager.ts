@@ -1,4 +1,5 @@
 import { activatePowerUp, PowerUpState } from "./powerup-manager";
+import { Z_INDEX } from "./z-index";
 
 export function createPlayer(k: ReturnType<typeof import("kaplay").default>): {
   player: any;
@@ -11,6 +12,7 @@ export function createPlayer(k: ReturnType<typeof import("kaplay").default>): {
     k.area(),
     k.opacity(1),
     k.scale(0.75, 0.75), // Scale down to 75% (24px instead of 32px)
+    k.z(Z_INDEX.PLAYER),
     k.timer(),
     "player",
   ]);
@@ -26,7 +28,7 @@ export function createPlayer(k: ReturnType<typeof import("kaplay").default>): {
     k.outline(1, k.rgb(100, 150, 255)), // Blue outline, 1px width
     k.pos(k.width() / 2, k.height() / 2),
     k.anchor("center"),
-    k.z(40), // Below player sprite but above background
+    k.z(Z_INDEX.PLAYER_COLLISION_ZONE),
     k.opacity(0.25), // Discrete - low opacity
     "playerCollisionZone",
   ]);

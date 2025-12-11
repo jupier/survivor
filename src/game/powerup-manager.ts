@@ -1,5 +1,7 @@
 export type PowerUpType = "speed" | "magnet" | "invincibility" | "damage";
 
+import { Z_INDEX } from "./z-index";
+
 export function spawnPowerUp(
   k: ReturnType<typeof import("kaplay").default>,
   position: { x: number; y: number },
@@ -27,7 +29,7 @@ export function spawnPowerUp(
     k.area({
       collisionIgnore: ["enemy", "projectile", "xp"],
     }),
-    k.z(46),
+    k.z(Z_INDEX.POWER_UPS),
     "powerUp",
   ]);
 

@@ -1,3 +1,5 @@
+import { Z_INDEX } from "./z-index";
+
 export function showDamageNumber(
   k: ReturnType<typeof import("kaplay").default>,
   position: { x: number; y: number },
@@ -15,7 +17,7 @@ export function showDamageNumber(
     k.anchor("center"),
     k.opacity(1),
     k.scale(1, 1),
-    k.z(100),
+    k.z(Z_INDEX.DAMAGE_NUMBERS),
     "damageNumber",
   ]);
 
@@ -41,4 +43,3 @@ export function showDamageNumber(
     damageText.destroy();
   });
 }
-

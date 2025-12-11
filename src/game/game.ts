@@ -22,6 +22,8 @@ import { loadSounds, SoundManager } from "./sound-manager";
 import { showDamageNumber } from "./damage-numbers";
 import { spawnPowerUp, updatePowerUps } from "./powerup-manager";
 import { spawnBoss } from "./enemy-manager";
+import { getLevelConfig, LevelConfig } from "./level-config";
+import { Z_INDEX } from "./z-index";
 
 export class Game {
   private k: ReturnType<typeof kaplay>;
@@ -46,6 +48,7 @@ export class Game {
     triggerAnimation: () => void;
   } | null = null;
   private sounds!: SoundManager;
+  private isTransitioning: boolean = false;
 
   constructor(container: HTMLElement) {
     const width = Math.min(window.innerWidth, 1200);
@@ -64,6 +67,14 @@ export class Game {
 
   private enemySpeed = 45; // pixels per second (reduced for better playability)
   private enemySize = 24; // size of enemy sprite (24x24, scaled down from 32)
+  private currentLevelConfig!: LevelConfig;
+
+  private getLevelMultipliers() {
+    return {
+      speedMultiplier: this.currentLevelConfig.enemySpeedMultiplier,
+      healthMultiplier: this.currentLevelConfig.enemyHealthMultiplier,
+    };
+  }
 
   private async setupGame(): Promise<void> {
     // Load all sprites
@@ -72,8 +83,11 @@ export class Game {
     // Load sounds
     this.sounds = await loadSounds();
 
+    // Initialize level config
+    this.currentLevelConfig = getLevelConfig(this.state.currentLevel);
+
     // Create background
-    createBackground(this.k);
+    createBackground(this.k, this.state.currentLevel);
 
     // Create player
     const playerData = createPlayer(this.k);
@@ -133,13 +147,18 @@ export class Game {
       this.player,
       this.enemySpeed,
       this.enemySize,
-      this.state.enemySpawnInterval,
+      this.state.enemySpawnInterval *
+        this.currentLevelConfig.enemySpawnIntervalMultiplier,
       () => this.state.isPaused,
       () => ({
         active: this.state.slowWeaponActive,
         effectPercentage: this.state.slowEffectPercentage,
         zoneRadius: this.state.targetingZoneRadius,
-      })
+      }),
+      {
+        speedMultiplier: this.currentLevelConfig.enemySpeedMultiplier,
+        healthMultiplier: this.currentLevelConfig.enemyHealthMultiplier,
+      }
     );
 
     // Create targeting zone
@@ -230,7 +249,7 @@ export class Game {
       this.k.sprite("targeting-zone"),
       this.k.pos(this.player.pos.x, this.player.pos.y),
       this.k.anchor("center"),
-      this.k.z(50), // Above background but below most game objects
+      this.k.z(Z_INDEX.TARGETING_ZONE),
       this.k.opacity(0.5), // Semi-transparent
       this.k.scale(this.k.vec2(scaleValue, scaleValue)), // Scale to match radius
       "targetingZone",
@@ -242,7 +261,7 @@ export class Game {
       this.k.color(100, 150, 255), // Blue color
       this.k.pos(this.player.pos.x, this.player.pos.y),
       this.k.anchor("center"),
-      this.k.z(49), // Just below the targeting zone sprite
+      this.k.z(Z_INDEX.TARGETING_ZONE_OVERLAY),
       this.k.opacity(0), // Initially invisible
       "targetingZoneOverlay",
     ]);
@@ -253,7 +272,7 @@ export class Game {
       this.k.color(255, 165, 0), // Orange color
       this.k.pos(this.player.pos.x, this.player.pos.y),
       this.k.anchor("center"),
-      this.k.z(48), // Just below the blue overlay
+      this.k.z(Z_INDEX.AOE_ZONE_OVERLAY),
       this.k.opacity(0), // Initially invisible
       "aoeZoneOverlay",
     ]);
@@ -396,7 +415,8 @@ export class Game {
               zoneRadius: this.state.targetingZoneRadius,
             }),
             { x: enemy.pos.x + offsetX, y: enemy.pos.y + offsetY },
-            "normal"
+            "normal",
+            this.getLevelMultipliers()
           );
         }
       } else if (enemyType === "exploder") {
@@ -457,6 +477,13 @@ export class Game {
       // Disable enemy movement during death animation
       // Don't remove area component as it causes collision system errors
       (enemy as any).isDying = true;
+
+      // Check for boss death and level transition BEFORE untagging
+      if (enemyType === "boss") {
+        // Check if we should transition to next level
+        // Do this before untagging so we can still find the boss in the list
+        this.handleBossKilled(enemy);
+      }
 
       // Remove enemy tag to prevent collisions during death animation
       enemy.untag("enemy");
@@ -530,7 +557,10 @@ export class Game {
                     active: this.state.slowWeaponActive,
                     effectPercentage: this.state.slowEffectPercentage,
                     zoneRadius: this.state.targetingZoneRadius,
-                  })
+                  }),
+                  undefined,
+                  undefined,
+                  this.getLevelMultipliers()
                 );
               }
             }
@@ -571,7 +601,8 @@ export class Game {
                       zoneRadius: this.state.targetingZoneRadius,
                     }),
                     undefined,
-                    "normal"
+                    "normal",
+                    this.getLevelMultipliers()
                   );
                 }
               }
@@ -599,7 +630,8 @@ export class Game {
                         zoneRadius: this.state.targetingZoneRadius,
                       }),
                       undefined,
-                      "strong"
+                      "strong",
+                      this.getLevelMultipliers()
                     );
                   }
                 }
@@ -628,7 +660,8 @@ export class Game {
                         zoneRadius: this.state.targetingZoneRadius,
                       }),
                       undefined,
-                      "splitter"
+                      "splitter",
+                      this.getLevelMultipliers()
                     );
                   }
                 }
@@ -657,7 +690,8 @@ export class Game {
                         zoneRadius: this.state.targetingZoneRadius,
                       }),
                       undefined,
-                      "exploder"
+                      "exploder",
+                      this.getLevelMultipliers()
                     );
                   }
                 }
@@ -686,7 +720,8 @@ export class Game {
                         zoneRadius: this.state.targetingZoneRadius,
                       }),
                       undefined,
-                      "elite"
+                      "elite",
+                      this.getLevelMultipliers()
                     );
                   }
                 }
@@ -715,7 +750,8 @@ export class Game {
                         zoneRadius: this.state.targetingZoneRadius,
                       }),
                       undefined,
-                      "charger"
+                      "charger",
+                      this.getLevelMultipliers()
                     );
                   }
                 }
@@ -743,7 +779,10 @@ export class Game {
                         active: this.state.slowWeaponActive,
                         effectPercentage: this.state.slowEffectPercentage,
                         zoneRadius: this.state.targetingZoneRadius,
-                      })
+                      }),
+                      undefined,
+                      undefined,
+                      this.getLevelMultipliers()
                     );
                   }
                 }
@@ -752,13 +791,14 @@ export class Game {
           }
         }
 
-        // Spawn boss every 2 minutes (120 seconds)
+        // Spawn boss based on level config
         if (!(this as any).lastBossSpawnTime) {
           (this as any).lastBossSpawnTime = 0;
         }
+        const bossSpawnInterval = this.currentLevelConfig.bossSpawnInterval;
         if (
-          gameTimeElapsed >= 120 &&
-          gameTimeElapsed - (this as any).lastBossSpawnTime >= 120
+          gameTimeElapsed >= bossSpawnInterval &&
+          gameTimeElapsed - (this as any).lastBossSpawnTime >= bossSpawnInterval
         ) {
           (this as any).lastBossSpawnTime = gameTimeElapsed;
           spawnBoss(
@@ -771,7 +811,12 @@ export class Game {
               active: this.state.slowWeaponActive,
               effectPercentage: this.state.slowEffectPercentage,
               zoneRadius: this.state.targetingZoneRadius,
-            })
+            }),
+            this.currentLevelConfig.bossHealth,
+            {
+              speedMultiplier: this.currentLevelConfig.enemySpeedMultiplier,
+              healthMultiplier: this.currentLevelConfig.enemyHealthMultiplier,
+            }
           );
         }
 
@@ -920,6 +965,165 @@ export class Game {
           this.k.easings.easeInQuad
         );
       });
+  }
+
+  private handleBossKilled(dyingBoss: any): void {
+    // Prevent multiple transitions
+    if (this.isTransitioning) {
+      return;
+    }
+
+    // Check if there are any bosses still alive (excluding the one that just died)
+    // Check all enemies with the "enemy" tag
+    const allEnemies = this.k.get("enemy");
+    const aliveBosses = allEnemies.filter(
+      (e: any) =>
+        (e as any).enemyType === "boss" &&
+        e !== dyingBoss &&
+        !(e as any).isDying
+    );
+
+    if (aliveBosses.length === 0) {
+      // All bosses killed, transition to next level
+      this.isTransitioning = true;
+      // Small delay to ensure death animation starts before transition
+      this.k.wait(0.3, () => {
+        this.transitionToNextLevel();
+      });
+    }
+  }
+
+  private transitionToNextLevel(): void {
+    const nextLevel = this.state.currentLevel + 1;
+    const nextLevelConfig = getLevelConfig(nextLevel);
+
+    // Check if next level exists
+    if (nextLevelConfig.levelNumber === this.state.currentLevel) {
+      // No more levels, stay on current level
+      this.isTransitioning = false;
+      return;
+    }
+
+    // Update level
+    this.state.currentLevel = nextLevel;
+    this.currentLevelConfig = nextLevelConfig;
+
+    // Reset game time for new level
+    this.state.gameTime = nextLevelConfig.gameTime;
+    (this as any).lastBossSpawnTime = 0;
+    this.state.lastSpawnRateIncrease = 0;
+
+    // Reset enemy spawn interval based on level
+    this.state.enemySpawnInterval =
+      1 * nextLevelConfig.enemySpawnIntervalMultiplier;
+
+    // Change background (async, but we'll continue)
+    createBackground(this.k, this.state.currentLevel);
+
+    // Clear all existing enemies
+    const allEnemies = this.k.get("enemy");
+    for (const enemy of allEnemies) {
+      enemy.destroy();
+    }
+
+    // Restart enemy spawning with new level multipliers
+    if (this.enemySpawnControllers) {
+      // Cancel all existing controllers
+      if (this.enemySpawnControllers.normalController)
+        this.enemySpawnControllers.normalController.cancel();
+      if (this.enemySpawnControllers.strongController)
+        this.enemySpawnControllers.strongController.cancel();
+      if (this.enemySpawnControllers.eliteController)
+        this.enemySpawnControllers.eliteController.cancel();
+      if (this.enemySpawnControllers.swarmController)
+        this.enemySpawnControllers.swarmController.cancel();
+      if (this.enemySpawnControllers.chargerController)
+        this.enemySpawnControllers.chargerController.cancel();
+      if (this.enemySpawnControllers.splitterController)
+        this.enemySpawnControllers.splitterController.cancel();
+      if (this.enemySpawnControllers.exploderController)
+        this.enemySpawnControllers.exploderController.cancel();
+    }
+
+    this.enemySpawnControllers = setupEnemySpawning(
+      this.k,
+      this.player,
+      this.enemySpeed,
+      this.enemySize,
+      this.state.enemySpawnInterval,
+      () => this.state.isPaused,
+      () => ({
+        active: this.state.slowWeaponActive,
+        effectPercentage: this.state.slowEffectPercentage,
+        zoneRadius: this.state.targetingZoneRadius,
+      }),
+      {
+        speedMultiplier: this.currentLevelConfig.enemySpeedMultiplier,
+        healthMultiplier: this.currentLevelConfig.enemyHealthMultiplier,
+      }
+    );
+
+    // Show level transition message
+    this.showLevelTransitionMessage(nextLevelConfig.name);
+
+    // Reset transition flag after a delay
+    this.k.wait(3, () => {
+      this.isTransitioning = false;
+    });
+  }
+
+  private showLevelTransitionMessage(levelName: string): void {
+    // Create overlay
+    const overlay = this.k.add([
+      this.k.rect(this.k.width(), this.k.height()),
+      this.k.color(0, 0, 0),
+      this.k.opacity(0.7),
+      this.k.pos(0, 0),
+      this.k.anchor("topleft"),
+      this.k.fixed(),
+      this.k.z(Z_INDEX.LEVEL_TRANSITION_OVERLAY),
+    ]);
+
+    // Level name text
+    const levelText = this.k.add([
+      this.k.text(levelName, { size: 48 }),
+      this.k.color(255, 215, 0), // Gold
+      this.k.pos(this.k.width() / 2, this.k.height() / 2 - 30),
+      this.k.anchor("center"),
+      this.k.fixed(),
+      this.k.z(Z_INDEX.LEVEL_TRANSITION_TEXT),
+    ]);
+
+    // Transition message
+    const messageText = this.k.add([
+      this.k.text("Level Complete! Next Level Starting...", { size: 24 }),
+      this.k.color(255, 255, 255),
+      this.k.pos(this.k.width() / 2, this.k.height() / 2 + 30),
+      this.k.anchor("center"),
+      this.k.fixed(),
+      this.k.z(Z_INDEX.LEVEL_TRANSITION_TEXT),
+    ]);
+
+    // Fade out after 2 seconds
+    this.k.wait(2, () => {
+      this.k
+        .tween(
+          (overlay as any).opacity ?? 1,
+          0,
+          0.5,
+          (val) => {
+            (overlay as any).opacity = val;
+            (levelText as any).opacity = val;
+            (messageText as any).opacity = val;
+          },
+          this.k.easings.easeOutQuad
+        )
+        .onEnd(() => {
+          if (overlay.exists()) overlay.destroy();
+          if (levelText.exists()) levelText.destroy();
+          if (messageText.exists()) messageText.destroy();
+        });
+    });
   }
 
   private handlePlayerDeath(): void {

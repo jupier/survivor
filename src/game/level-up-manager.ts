@@ -1,3 +1,5 @@
+import { Z_INDEX } from "./z-index";
+
 // Helper function to randomly select N items from an array
 function randomSelect<T>(array: T[], count: number): T[] {
   const shuffled = [...array].sort(() => Math.random() - 0.5);
@@ -19,7 +21,7 @@ export function showLevelUpMenu(
     k.pos(0, 0),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(200),
+    k.z(Z_INDEX.LEVEL_UP_MENU_BG),
     "levelUpMenu",
   ]);
 
@@ -75,7 +77,7 @@ export function showLevelUpMenu(
     k.pos(menuX, menuY),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(201),
+    k.z(Z_INDEX.LEVEL_UP_MENU_CONTENT),
     "levelUpMenu",
   ]);
 
@@ -86,7 +88,7 @@ export function showLevelUpMenu(
     k.pos(k.width() / 2, menuY + 40),
     k.anchor("center"),
     k.fixed(),
-    k.z(202),
+    k.z(Z_INDEX.LEVEL_UP_MENU_OPTIONS),
     "levelUpMenu",
   ]);
 
@@ -104,7 +106,7 @@ export function showLevelUpMenu(
       k.pos(menuX + 20, optionY),
       k.anchor("topleft"),
       k.fixed(),
-      k.z(202),
+      k.z(Z_INDEX.LEVEL_UP_MENU_OPTIONS),
       k.area(),
       `option-${option.id}`,
       "levelUpMenu",
@@ -121,7 +123,7 @@ export function showLevelUpMenu(
       k.pos(menuX + menuWidth / 2, optionY + optionHeight / 2),
       k.anchor("center"),
       k.fixed(),
-      k.z(203),
+      k.z(Z_INDEX.LEVEL_UP_MENU_HIGHLIGHT),
       "levelUpMenu",
     ]);
 

@@ -1,3 +1,5 @@
+import { Z_INDEX } from "./z-index";
+
 export type EnemyType =
   | "normal"
   | "strong"
@@ -23,7 +25,11 @@ export function spawnEnemy(
     zoneRadius: number;
   } = () => ({ active: false, effectPercentage: 0, zoneRadius: 0 }),
   position?: { x: number; y: number },
-  enemyType?: EnemyType
+  enemyType?: EnemyType,
+  levelMultipliers?: {
+    speedMultiplier: number;
+    healthMultiplier: number;
+  }
 ): void {
   // Spawn enemy at random position on the map edges
   const side = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
@@ -63,12 +69,17 @@ export function spawnEnemy(
   let speedMultiplier = 1;
   let sizeMultiplier = 1;
 
+  // Apply level multipliers if provided
+  const speedMultiplierFromLevel = levelMultipliers?.speedMultiplier ?? 1.0;
+  const healthMultiplierFromLevel = levelMultipliers?.healthMultiplier ?? 1.0;
+
   if (enemyType === "boss") {
-    enemyHealth = 50;
+    // Boss health defaults to 50, but will be overridden by spawnBoss if specified
+    enemyHealth = 50; // Default, will be set properly in spawnBoss
     enemySpriteName = "enemy-boss";
     actualEnemyType = "boss";
     sizeMultiplier = 2; // Boss is bigger
-    speedMultiplier = 0.7; // Boss is slower
+    speedMultiplier = 0.7 * speedMultiplierFromLevel; // Boss is slower, but affected by level
   } else if (enemyType === "charger") {
     enemyHealth = 1;
     enemySpriteName = "enemy-charger";
@@ -83,25 +94,25 @@ export function spawnEnemy(
     enemySpriteName = "enemy-exploder";
     actualEnemyType = "exploder";
   } else if (isSwarmEnemy) {
-    enemyHealth = 1;
+    enemyHealth = Math.round(1 * healthMultiplierFromLevel);
     enemySpriteName = "enemy-swarm";
     actualEnemyType = "swarm";
   } else if (isEliteEnemy) {
-    enemyHealth = 3;
+    enemyHealth = Math.round(3 * healthMultiplierFromLevel);
     enemySpriteName = "enemy-elite";
     actualEnemyType = "elite";
   } else if (isStrongEnemy) {
-    enemyHealth = 2;
+    enemyHealth = Math.round(2 * healthMultiplierFromLevel);
     enemySpriteName = "enemy-strong";
     actualEnemyType = "strong";
   } else {
-    enemyHealth = 1;
+    enemyHealth = Math.round(1 * healthMultiplierFromLevel);
     enemySpriteName = "enemy-normal";
     actualEnemyType = "normal";
   }
 
   const actualSize = enemySize * sizeMultiplier;
-  const actualSpeed = enemySpeed * speedMultiplier;
+  const actualSpeed = enemySpeed * speedMultiplier * speedMultiplierFromLevel;
 
   // Create enemy with sprite (scaled down to 75% of original size)
   const enemy = k.add([
@@ -112,7 +123,7 @@ export function spawnEnemy(
       collisionIgnore: ["enemy", "xp", "healthPoint"],
     }),
     k.scale(0.75 * sizeMultiplier, 0.75 * sizeMultiplier),
-    k.z(45), // Ensure enemies are above background but below player
+    k.z(Z_INDEX.ENEMIES),
     "enemy",
   ]);
 
@@ -124,6 +135,75 @@ export function spawnEnemy(
   (enemy as any).separationX = 0;
   (enemy as any).separationY = 0;
   (enemy as any).chargeCooldown = 0; // For charger enemy
+
+  // Create health bar for boss enemies
+  if (actualEnemyType === "boss") {
+    const healthBarWidth = actualSize * 1.5;
+    const healthBarHeight = 6;
+    const healthBarOffsetY = actualSize + 10;
+
+    // Health bar background
+    const healthBarBg = k.add([
+      k.rect(healthBarWidth, healthBarHeight),
+      k.color(60, 60, 60),
+      k.pos(enemy.pos.x, enemy.pos.y - healthBarOffsetY),
+      k.anchor("center"),
+      k.z(Z_INDEX.BOSS_HEALTH_BAR_BG),
+      "bossHealthBar",
+    ]);
+
+    // Health bar fill
+    const healthBarFill = k.add([
+      k.rect(healthBarWidth, healthBarHeight),
+      k.color(255, 0, 0), // Red
+      k.pos(enemy.pos.x, enemy.pos.y - healthBarOffsetY),
+      k.anchor("center"),
+      k.z(Z_INDEX.BOSS_HEALTH_BAR_FILL),
+      "bossHealthBar",
+    ]);
+
+    // Store health bar references on enemy
+    (enemy as any).healthBarBg = healthBarBg;
+    (enemy as any).healthBarFill = healthBarFill;
+
+    // Update health bar position and width in enemy's update loop
+    enemy.onUpdate(() => {
+      if ((enemy as any).isDying) {
+        healthBarBg.destroy();
+        healthBarFill.destroy();
+        return;
+      }
+
+      const healthPercentage = Math.max(
+        0,
+        (enemy as any).health / (enemy as any).maxHealth
+      );
+
+      // Update position to follow enemy
+      healthBarBg.pos.x = enemy.pos.x;
+      healthBarBg.pos.y = enemy.pos.y - healthBarOffsetY;
+      healthBarFill.pos.x = enemy.pos.x;
+      healthBarFill.pos.y = enemy.pos.y - healthBarOffsetY;
+
+      // Update width based on health
+      healthBarFill.width = healthBarWidth * healthPercentage;
+
+      // Change color based on health (green -> yellow -> red)
+      if (healthPercentage > 0.5) {
+        healthBarFill.color = k.color(0, 255, 0); // Green
+      } else if (healthPercentage > 0.25) {
+        healthBarFill.color = k.color(255, 255, 0); // Yellow
+      } else {
+        healthBarFill.color = k.color(255, 0, 0); // Red
+      }
+    });
+
+    // Clean up health bar when enemy is destroyed
+    enemy.onDestroy(() => {
+      if (healthBarBg.exists()) healthBarBg.destroy();
+      if (healthBarFill.exists()) healthBarFill.destroy();
+    });
+  }
 
   // Move enemy towards player
   // Cache slow weapon state to avoid calling function every frame
@@ -298,6 +378,11 @@ export function spawnBoss(
     active: boolean;
     effectPercentage: number;
     zoneRadius: number;
+  },
+  bossHealth?: number,
+  levelMultipliers?: {
+    speedMultiplier: number;
+    healthMultiplier: number;
   }
 ): void {
   // Spawn boss at center of a random edge
@@ -335,8 +420,28 @@ export function spawnBoss(
     isPaused,
     getSlowWeaponState,
     { x: spawnX, y: spawnY },
-    "boss"
+    "boss",
+    levelMultipliers
   );
+
+  // Override boss health if specified
+  if (bossHealth !== undefined) {
+    const bossEnemies = k
+      .get("enemy")
+      .filter((e: any) => (e as any).enemyType === "boss");
+    const latestBoss = bossEnemies[bossEnemies.length - 1];
+    if (latestBoss) {
+      (latestBoss as any).health = bossHealth;
+      (latestBoss as any).maxHealth = bossHealth;
+      // Update health bar if it exists
+      if ((latestBoss as any).healthBarFill) {
+        const healthBarWidth = (latestBoss as any).healthBarBg.width;
+        const healthPercentage = 1.0;
+        (latestBoss as any).healthBarFill.width =
+          healthBarWidth * healthPercentage;
+      }
+    }
+  }
 }
 
 export function setupEnemySpawning(
@@ -350,7 +455,11 @@ export function setupEnemySpawning(
     active: boolean;
     effectPercentage: number;
     zoneRadius: number;
-  } = () => ({ active: false, effectPercentage: 0, zoneRadius: 0 })
+  } = () => ({ active: false, effectPercentage: 0, zoneRadius: 0 }),
+  levelMultipliers?: {
+    speedMultiplier: number;
+    healthMultiplier: number;
+  }
 ): {
   normalController: any;
   strongController: any;
@@ -374,7 +483,8 @@ export function setupEnemySpawning(
         isPaused,
         getSlowWeaponState,
         undefined,
-        "normal"
+        "normal",
+        levelMultipliers
       );
     }
   });
@@ -395,7 +505,8 @@ export function setupEnemySpawning(
           isPaused,
           getSlowWeaponState,
           undefined,
-          "strong"
+          "strong",
+          levelMultipliers
         );
       }
     });
@@ -418,7 +529,8 @@ export function setupEnemySpawning(
           isPaused,
           getSlowWeaponState,
           undefined,
-          "splitter"
+          "splitter",
+          levelMultipliers
         );
       }
     });
@@ -441,7 +553,8 @@ export function setupEnemySpawning(
           isPaused,
           getSlowWeaponState,
           undefined,
-          "exploder"
+          "exploder",
+          levelMultipliers
         );
       }
     });
@@ -463,7 +576,8 @@ export function setupEnemySpawning(
           isPaused,
           getSlowWeaponState,
           undefined,
-          "elite"
+          "elite",
+          levelMultipliers
         );
       }
     });
@@ -486,7 +600,8 @@ export function setupEnemySpawning(
           isPaused,
           getSlowWeaponState,
           undefined,
-          "charger"
+          "charger",
+          levelMultipliers
         );
       }
     });

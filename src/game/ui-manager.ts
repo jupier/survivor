@@ -1,5 +1,6 @@
 import { GameState } from "./game-state";
 import { PowerUpState, PowerUpType } from "./powerup-manager";
+import { Z_INDEX } from "./z-index";
 
 export interface UIElements {
   levelText: any;
@@ -35,7 +36,7 @@ export function createUI(
     k.pos(uiPadding, currentY),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(110),
+    k.z(Z_INDEX.UI_STATS),
   ]);
   currentY += 30;
 
@@ -46,7 +47,7 @@ export function createUI(
     k.pos(uiPadding, currentY),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(110),
+    k.z(Z_INDEX.UI_STATS),
   ]);
   currentY += 30;
 
@@ -57,7 +58,7 @@ export function createUI(
     k.pos(uiPadding, currentY),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(110),
+    k.z(Z_INDEX.UI_STATS),
   ]);
   currentY += 35;
 
@@ -68,7 +69,7 @@ export function createUI(
     k.pos(uiPadding, currentY),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(101),
+    k.z(Z_INDEX.UI_BACKGROUND),
   ]);
 
   // Experience bar (blue) - will be updated
@@ -78,7 +79,7 @@ export function createUI(
     k.pos(uiPadding, currentY),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(102),
+    k.z(Z_INDEX.UI_BAR),
   ]);
 
   // Experience label
@@ -88,7 +89,7 @@ export function createUI(
     k.pos(uiPadding + 5, currentY + barHeight / 2),
     k.anchor("left"),
     k.fixed(),
-    k.z(103),
+    k.z(Z_INDEX.UI_TEXT),
   ]);
 
   // Experience counter (right side of bar) - shows gems needed
@@ -98,7 +99,7 @@ export function createUI(
     k.pos(uiPadding + barWidth - 5, currentY + barHeight / 2),
     k.anchor("right"),
     k.fixed(),
-    k.z(103),
+    k.z(Z_INDEX.UI_TEXT),
   ]);
   currentY += barHeight + barSpacing;
 
@@ -109,7 +110,7 @@ export function createUI(
     k.pos(uiPadding, currentY),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(101),
+    k.z(Z_INDEX.UI_BACKGROUND),
   ]);
 
   // Life bar (red) - will be updated
@@ -119,7 +120,7 @@ export function createUI(
     k.pos(uiPadding, currentY),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(102),
+    k.z(Z_INDEX.UI_BAR),
   ]);
 
   // Health label
@@ -129,7 +130,7 @@ export function createUI(
     k.pos(uiPadding + 5, currentY + barHeight / 2),
     k.anchor("left"),
     k.fixed(),
-    k.z(103),
+    k.z(Z_INDEX.UI_TEXT),
   ]);
 
   // Health counter (right side of bar)
@@ -139,7 +140,7 @@ export function createUI(
     k.pos(uiPadding + barWidth - 5, currentY + barHeight / 2),
     k.anchor("right"),
     k.fixed(),
-    k.z(103),
+    k.z(Z_INDEX.UI_TEXT),
   ]);
   currentY += barHeight + barSpacing + 10;
 
@@ -154,7 +155,7 @@ export function createUI(
     k.pos(statsX, statsY),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(110),
+    k.z(Z_INDEX.UI_STATS),
   ]);
   statsY += 25;
 
@@ -165,7 +166,7 @@ export function createUI(
     k.pos(statsX, statsY),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(110),
+    k.z(Z_INDEX.UI_STATS),
   ]);
   statsY += 20;
 
@@ -176,7 +177,7 @@ export function createUI(
     k.pos(statsX, statsY),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(110),
+    k.z(Z_INDEX.UI_STATS),
   ]);
   statsY += 20;
 
@@ -187,7 +188,7 @@ export function createUI(
     k.pos(statsX, statsY),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(110),
+    k.z(Z_INDEX.UI_STATS),
   ]);
   statsY += 20;
 
@@ -198,7 +199,7 @@ export function createUI(
     k.pos(statsX, statsY),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(110),
+    k.z(Z_INDEX.UI_STATS),
   ]);
   statsY += 20;
 
@@ -209,7 +210,7 @@ export function createUI(
     k.pos(uiPadding, k.height() - uiPadding),
     k.anchor("botleft"),
     k.fixed(),
-    k.z(110),
+    k.z(Z_INDEX.UI_STATS),
   ]);
 
   // Power-up display will be created dynamically
@@ -264,8 +265,8 @@ export function updateUI(ui: UIElements, state: GameState): void {
   // Update kills counter
   ui.killsText.text = `Kills: ${state.enemiesKilled}`;
 
-  // Update level display
-  ui.levelText.text = `Level: ${state.playerLevel}`;
+  // Update level display (show game level, not player level)
+  ui.levelText.text = `Level: ${state.currentLevel} (Player Lv.${state.playerLevel})`;
 
   // Update stats display
   ui.speedStatText.text = `Speed: ${Math.round(state.speed)}`;
@@ -303,17 +304,16 @@ export function updatePowerUpDisplay(
 
   // Track which power-ups are currently active
   const activeTypes: Set<PowerUpType> = new Set();
-  
+
   for (const key in powerUps) {
     const powerUpType = key as PowerUpType;
     const powerUp = powerUps[powerUpType];
-    
+
     if (powerUp.active && currentTime < powerUp.endTime) {
       activeTypes.add(powerUpType);
       const timeRemaining = powerUp.endTime - currentTime;
-      const timeString = timeRemaining > 0 
-        ? timeRemaining.toFixed(1) + "s"
-        : "0.0s";
+      const timeString =
+        timeRemaining > 0 ? timeRemaining.toFixed(1) + "s" : "0.0s";
 
       // Get or create text element for this power-up
       if (!ui.powerUpTexts.has(powerUpType)) {
@@ -323,7 +323,7 @@ export function updatePowerUpDisplay(
           k.pos(startX, startY + yOffset),
           k.anchor("topleft"),
           k.fixed(),
-          k.z(111),
+          k.z(Z_INDEX.UI_POWER_UPS),
         ]);
         ui.powerUpTexts.set(powerUpType, textElement);
       }

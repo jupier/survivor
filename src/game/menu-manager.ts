@@ -1,3 +1,5 @@
+import { Z_INDEX } from "./z-index";
+
 export function showPauseMenu(
   k: ReturnType<typeof import("kaplay").default>
 ): void {
@@ -9,7 +11,7 @@ export function showPauseMenu(
     k.pos(0, 0),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(250),
+    k.z(Z_INDEX.PAUSE_MENU_OVERLAY),
     "pause",
   ]);
 
@@ -20,7 +22,7 @@ export function showPauseMenu(
     k.pos(k.width() / 2, k.height() / 2),
     k.anchor("center"),
     k.fixed(),
-    k.z(251),
+    k.z(Z_INDEX.PAUSE_MENU_TEXT),
     "pause",
   ]);
 
@@ -31,18 +33,22 @@ export function showPauseMenu(
     k.pos(k.width() / 2, k.height() / 2 + 60),
     k.anchor("center"),
     k.fixed(),
-    k.z(251),
+    k.z(Z_INDEX.PAUSE_MENU_TEXT),
     "pause",
   ]);
 }
 
-export function hidePauseMenu(k: ReturnType<typeof import("kaplay").default>): void {
+export function hidePauseMenu(
+  k: ReturnType<typeof import("kaplay").default>
+): void {
   // Remove all pause menu elements
   const pauseElements = k.get("pause");
   pauseElements.forEach((elem) => elem.destroy());
 }
 
-export function showDeathScreen(k: ReturnType<typeof import("kaplay").default>): void {
+export function showDeathScreen(
+  k: ReturnType<typeof import("kaplay").default>
+): void {
   // Create death screen overlay
   k.add([
     k.rect(k.width(), k.height()),
@@ -51,7 +57,7 @@ export function showDeathScreen(k: ReturnType<typeof import("kaplay").default>):
     k.pos(0, 0),
     k.anchor("topleft"),
     k.fixed(),
-    k.z(300),
+    k.z(Z_INDEX.DEATH_SCREEN_OVERLAY),
   ]);
 
   // Death message
@@ -61,7 +67,7 @@ export function showDeathScreen(k: ReturnType<typeof import("kaplay").default>):
     k.pos(k.width() / 2, k.height() / 2 - 50),
     k.anchor("center"),
     k.fixed(),
-    k.z(301),
+    k.z(Z_INDEX.DEATH_SCREEN_TEXT),
   ]);
 
   // Restart instruction
@@ -71,7 +77,6 @@ export function showDeathScreen(k: ReturnType<typeof import("kaplay").default>):
     k.pos(k.width() / 2, k.height() / 2 + 50),
     k.anchor("center"),
     k.fixed(),
-    k.z(301),
+    k.z(Z_INDEX.DEATH_SCREEN_TEXT),
   ]);
 }
-

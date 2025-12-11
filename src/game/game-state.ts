@@ -31,6 +31,9 @@ export interface GameState {
   isPaused: boolean;
   enemiesKilled: number;
 
+  // Level system
+  currentLevel: number;
+
   // Power-ups
   powerUps: PowerUpState;
 }
@@ -55,6 +58,7 @@ export function createInitialGameState(): GameState {
     lastSpawnRateIncrease: 0,
     isPaused: false,
     enemiesKilled: 0,
+    currentLevel: 1,
     powerUps: createPowerUpState(),
   };
 }
