@@ -1,5 +1,5 @@
 // Utility to create a game logo programmatically
-// Creates a bold, action-themed logo for the Survivor game
+// Creates a bold, action-themed logo for the Mini Survivor game
 
 export function createLogo(): string {
   const canvas = document.createElement("canvas");
@@ -29,7 +29,7 @@ export function createLogo(): string {
     ctx.fill();
   }
 
-  // Draw "SURVIVOR" text with bold, game-style font
+  // Draw "MINI SURVIVOR" text with bold, game-style font
   ctx.font = "bold 72px Arial, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -46,12 +46,12 @@ export function createLogo(): string {
   textGradient.addColorStop(0.5, "#f97316"); // Orange
   textGradient.addColorStop(1, "#dc2626"); // Dark red
   ctx.fillStyle = textGradient;
-  ctx.fillText("SURVIVOR", 256, 128);
+  ctx.fillText("MINI SURVIVOR", 256, 128);
 
   // Add outline/stroke for emphasis
   ctx.strokeStyle = "#000000";
   ctx.lineWidth = 4;
-  ctx.strokeText("SURVIVOR", 256, 128);
+  ctx.strokeText("MINI SURVIVOR", 256, 128);
 
   // Reset shadow
   ctx.shadowColor = "transparent";

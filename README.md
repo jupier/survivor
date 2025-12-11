@@ -1,14 +1,14 @@
-# Survivor Game
+# Mini Survivor
 
 <div align="center">
-  <img src="survivor-icon.png" alt="Survivor Game Logo" width="128" height="128">
+  <img src="survivor-icon.png" alt="Mini Survivor Logo" width="128" height="128">
 </div>
 
 A browser-based survivor game inspired by Vampire Survivors, built with TypeScript and Vite.
 
 ## 🎮 Play the Game
 
-**[Play Survivor Game](https://jupier.github.io/survivor/)**
+**[Play Mini Survivor](https://jupier.github.io/survivor/)**
 
 ## Getting Started
 
