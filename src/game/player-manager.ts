@@ -20,16 +20,16 @@ export function createPlayer(k: ReturnType<typeof import("kaplay").default>): {
   // Start with idle animation facing down
   player.play("idle-down");
 
-  // Create collision zone indicator for player (circle outline)
+  // Create collision zone indicator for player (circle outline) - shiny orange
   const playerSize = 24; // Approximate player sprite size (scaled down from 32)
   const collisionRadius = playerSize / 2;
   const collisionZone = k.add([
     k.circle(collisionRadius),
-    k.outline(1, k.rgb(100, 150, 255)), // Blue outline, 1px width
+    k.outline(2, k.rgb(255, 165, 0)), // Shiny orange outline, 2px width for visibility
     k.pos(k.width() / 2, k.height() / 2),
     k.anchor("center"),
     k.z(Z_INDEX.PLAYER_COLLISION_ZONE),
-    k.opacity(0.25), // Discrete - low opacity
+    k.opacity(0.4), // More visible for shiny effect
     "playerCollisionZone",
   ]);
 

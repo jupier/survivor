@@ -306,10 +306,10 @@ export class Game {
       "targetingZone",
     ]);
 
-    // Create blue overlay circle for slow weapon (initially hidden)
+    // Create overlay circle for targeting zone (for slow/AOE weapons)
     this.targetingZoneOverlay = this.k.add([
       this.k.circle(this.state.targetingZoneRadius),
-      this.k.color(100, 150, 255), // Blue color
+      this.k.color(100, 150, 255), // Blue color for slow weapon
       this.k.pos(this.player.pos.x, this.player.pos.y),
       this.k.anchor("center"),
       this.k.z(Z_INDEX.TARGETING_ZONE_OVERLAY),
@@ -373,11 +373,11 @@ export class Game {
           this.targetingZoneOverlay.opacity = 0.2;
           this.targetingZoneOverlay.radius = currentRadius;
           // Orange overlay (AOE) on top
-          this.aoeZoneOverlay.opacity = 0.15;
+          this.aoeZoneOverlay.opacity = 0.3;
           this.aoeZoneOverlay.radius = currentRadius;
         } else if (currentAOEActive) {
           // Only AOE weapon active
-          this.aoeZoneOverlay.opacity = 0.15;
+          this.aoeZoneOverlay.opacity = 0.3;
           this.aoeZoneOverlay.radius = currentRadius;
           this.targetingZoneOverlay.opacity = 0;
         } else if (currentSlowActive) {
@@ -938,9 +938,9 @@ export class Game {
         if (option === "fireSpeed") {
           // Increase fire speed (reduce interval)
           this.state.fireInterval = Math.max(
-            0.5,
-            this.state.fireInterval * 0.7
-          ); // 30% faster
+            0.2, // Increased max fire rate (was 0.5, now 0.2 = 5 shots/sec max)
+            this.state.fireInterval * 0.85 // Reduced upgrade strength (was 0.7 = 30% faster, now 0.85 = 15% faster)
+          );
           // Cancel old loop and start new one with updated interval
           this.fireLoopController.cancel();
           this.setupAutoFire();
@@ -1186,7 +1186,7 @@ export class Game {
       if (upgradeType === "speed") {
         this.state.speed = Math.round(this.state.speed * 1.2); // 20% faster
       } else if (upgradeType === "fireSpeed") {
-        this.state.fireInterval = Math.max(0.1, this.state.fireInterval * 0.7); // 30% faster
+        this.state.fireInterval = Math.max(0.2, this.state.fireInterval * 0.85); // 15% faster, max 0.2s interval
         // Cancel old loop and start new one with updated interval
         if (this.fireLoopController) {
           try {

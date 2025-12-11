@@ -38,6 +38,18 @@ export const LEVEL_CONFIGS: LevelConfig[] = [
     bossSpawnInterval: 90, // 1.5 minutes (more frequent)
     gameTime: 600, // 10 minutes
   },
+  {
+    levelNumber: 3,
+    name: "Level 3",
+    backgroundColor: [32, 32, 52], // Dark purple-gray
+    backgroundPatternColor: "#2a2a3a", // Dark purple-gray pattern
+    enemySpeedMultiplier: 1.5, // 50% faster
+    enemyHealthMultiplier: 2.0, // 100% more health
+    enemySpawnIntervalMultiplier: 0.6, // Spawn 40% faster
+    bossHealth: 100, // Even stronger boss
+    bossSpawnInterval: 60, // 1 minute (more frequent)
+    gameTime: 600, // 10 minutes
+  },
   // Future levels can be added here easily
 ];
 

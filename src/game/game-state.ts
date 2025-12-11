@@ -45,7 +45,7 @@ export function createInitialGameState(): GameState {
     projectileCount: 1,
     targetingZoneRadius: 100,
     slowWeaponActive: false,
-    slowEffectPercentage: 30, // 30% speed reduction by default
+    slowEffectPercentage: 15, // 15% speed reduction by default (reduced from 30%)
     aoeWeaponActive: false,
     aoeWeaponCooldown: 1.5, // Cooldown between AOE attacks (1.5 seconds)
     playerExperience: 0,
