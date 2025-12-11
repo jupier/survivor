@@ -190,11 +190,11 @@ export function spawnEnemy(
 
       // Change color based on health (green -> yellow -> red)
       if (healthPercentage > 0.5) {
-        healthBarFill.color = k.color(0, 255, 0); // Green
+        (healthBarFill as any).color = k.color(0, 255, 0); // Green
       } else if (healthPercentage > 0.25) {
-        healthBarFill.color = k.color(255, 255, 0); // Yellow
+        (healthBarFill as any).color = k.color(255, 255, 0); // Yellow
       } else {
-        healthBarFill.color = k.color(255, 0, 0); // Red
+        (healthBarFill as any).color = k.color(255, 0, 0); // Red
       }
     });
 

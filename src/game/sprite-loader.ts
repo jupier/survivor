@@ -138,6 +138,6 @@ export function createBackground(
     }
   });
 
-  // Update canvas background color
-  k.setBackground(levelConfig.backgroundColor);
+  // Background color is handled by the background tiles, not the canvas background
+  // The canvas background stays as set during kaplay initialization
 }

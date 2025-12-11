@@ -1,6 +1,6 @@
 import { GameState } from "./game-state";
 import { Z_INDEX } from "./z-index";
-import { getLevelConfig, LEVEL_CONFIGS } from "./level-config";
+import { LEVEL_CONFIGS } from "./level-config";
 
 export interface AdminMenuCallbacks {
   onUpgrade: (upgradeType: string, value?: number) => void;
@@ -20,7 +20,6 @@ let adminMenuElements: any[] = [];
 let buttonRefs: ButtonRef[] = [];
 let isMenuOpen = false;
 let menuCallbacks: AdminMenuCallbacks | null = null;
-let menuState: GameState | null = null;
 
 export function showAdminMenu(
   k: ReturnType<typeof import("kaplay").default>,
@@ -36,7 +35,6 @@ export function showAdminMenu(
   hideAdminMenu(k);
   isMenuOpen = true;
   menuCallbacks = callbacks;
-  menuState = state;
 
   // Create semi-transparent overlay
   const overlay = k.add([
@@ -352,7 +350,6 @@ function createUpgradeButton(
 }
 
 export function updateAllButtonTexts(state: GameState): void {
-  menuState = state;
   buttonRefs.forEach((ref) => {
     if (ref.text && ref.text.exists()) {
       try {
@@ -385,7 +382,6 @@ export function hideAdminMenu(
 ): void {
   isMenuOpen = false;
   menuCallbacks = null;
-  menuState = null;
 
   // Clear the tracking array first
   adminMenuElements.forEach((elem) => {
