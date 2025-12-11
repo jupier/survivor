@@ -35,29 +35,29 @@ export function createUI(
 
   // Level display (top left)
   const levelText = k.add([
-    k.text(`${t().ui.level}: 1`, { size: 24 }),
+    k.text(`${t().ui.level}: 1`, { size: 18 }),
     k.color(255, 215, 0), // Gold color
     k.pos(uiPadding, currentY),
     k.anchor("topleft"),
     k.fixed(),
     k.z(Z_INDEX.UI_STATS),
   ]);
-  currentY += 30;
+  currentY += 25;
 
   // Timer display (below level)
   const timerText = k.add([
-    k.text("10:00", { size: 20 }),
+    k.text("10:00", { size: 14 }),
     k.color(255, 255, 255),
     k.pos(uiPadding, currentY),
     k.anchor("topleft"),
     k.fixed(),
     k.z(Z_INDEX.UI_STATS),
   ]);
-  currentY += 30;
+  currentY += 20;
 
   // Kills counter (below timer)
   const killsText = k.add([
-    k.text(`${t().ui.kills}: 0`, { size: 20 }),
+    k.text(`${t().ui.kills}: 0`, { size: 14 }),
     k.color(255, 255, 255),
     k.pos(uiPadding, currentY),
     k.anchor("topleft"),
@@ -304,10 +304,8 @@ export function updateUI(ui: UIElements, state: GameState): void {
   // Update kills counter
   ui.killsText.text = `${t().ui.kills}: ${state.enemiesKilled}`;
 
-  // Update level display (show game level, not player level)
-  ui.levelText.text = `${t().ui.level}: ${state.currentLevel} (${
-    t().ui.playerLevel
-  }${state.playerLevel})`;
+  // Update level display (show game level only)
+  ui.levelText.text = `${t().ui.level}: ${state.currentLevel}`;
 
   // Update stats display
   ui.speedStatText.text = `${t().ui.speed}: ${Math.round(state.speed)}`;
