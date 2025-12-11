@@ -1,6 +1,7 @@
 import { GameState } from "./game-state";
 import { PowerUpState, PowerUpType } from "./powerup-manager";
 import { Z_INDEX } from "./z-index";
+import { t } from "./translations";
 
 export interface UIElements {
   levelText: any;
@@ -31,7 +32,7 @@ export function createUI(
 
   // Level display (top left)
   const levelText = k.add([
-    k.text("Level: 1", { size: 24 }),
+    k.text(`${t().ui.level}: 1`, { size: 24 }),
     k.color(255, 215, 0), // Gold color
     k.pos(uiPadding, currentY),
     k.anchor("topleft"),
@@ -53,7 +54,7 @@ export function createUI(
 
   // Kills counter (below timer)
   const killsText = k.add([
-    k.text("Kills: 0", { size: 20 }),
+    k.text(`${t().ui.kills}: 0`, { size: 20 }),
     k.color(255, 255, 255),
     k.pos(uiPadding, currentY),
     k.anchor("topleft"),
@@ -84,7 +85,7 @@ export function createUI(
 
   // Experience label
   k.add([
-    k.text("XP", { size: 14 }),
+    k.text(t().ui.xp, { size: 14 }),
     k.color(200, 200, 200),
     k.pos(uiPadding + 5, currentY + barHeight / 2),
     k.anchor("left"),
@@ -94,7 +95,7 @@ export function createUI(
 
   // Experience counter (right side of bar) - shows gems needed
   const expCounterText = k.add([
-    k.text("0/5 gems", { size: 12 }),
+    k.text(`0/5 ${t().ui.gems}`, { size: 12 }),
     k.color(200, 200, 200),
     k.pos(uiPadding + barWidth - 5, currentY + barHeight / 2),
     k.anchor("right"),
@@ -125,7 +126,7 @@ export function createUI(
 
   // Health label
   k.add([
-    k.text("HP", { size: 14 }),
+    k.text(t().ui.hp, { size: 14 }),
     k.color(200, 200, 200),
     k.pos(uiPadding + 5, currentY + barHeight / 2),
     k.anchor("left"),
@@ -150,7 +151,7 @@ export function createUI(
 
   // Stats title
   k.add([
-    k.text("Stats", { size: 18 }),
+    k.text(t().ui.stats, { size: 18 }),
     k.color(255, 255, 255),
     k.pos(statsX, statsY),
     k.anchor("topleft"),
@@ -161,7 +162,7 @@ export function createUI(
 
   // Speed stat
   const speedStatText = k.add([
-    k.text(`Speed: 120`, { size: 14 }),
+    k.text(`${t().ui.speed}: 120`, { size: 14 }),
     k.color(200, 200, 200),
     k.pos(statsX, statsY),
     k.anchor("topleft"),
@@ -172,7 +173,7 @@ export function createUI(
 
   // Projectile count stat
   const projectileStatText = k.add([
-    k.text(`Projectiles: 1`, { size: 14 }),
+    k.text(`${t().ui.projectiles}: 1`, { size: 14 }),
     k.color(200, 200, 200),
     k.pos(statsX, statsY),
     k.anchor("topleft"),
@@ -183,7 +184,7 @@ export function createUI(
 
   // Targeting zone radius stat
   const zoneStatText = k.add([
-    k.text(`Range: 150`, { size: 14 }),
+    k.text(`${t().ui.range}: 150`, { size: 14 }),
     k.color(200, 200, 200),
     k.pos(statsX, statsY),
     k.anchor("topleft"),
@@ -194,7 +195,7 @@ export function createUI(
 
   // Fire rate stat
   const fireRateStatText = k.add([
-    k.text(`Fire Rate: 1.0/s`, { size: 14 }),
+    k.text(`${t().ui.fireRate}: 1.0/s`, { size: 14 }),
     k.color(200, 200, 200),
     k.pos(statsX, statsY),
     k.anchor("topleft"),
@@ -205,7 +206,7 @@ export function createUI(
 
   // FPS counter (bottom left)
   const fpsText = k.add([
-    k.text("FPS: 60", { size: 16 }),
+    k.text(`${t().ui.fps}: 60`, { size: 16 }),
     k.color(150, 255, 150), // Light green color
     k.pos(uiPadding, k.height() - uiPadding),
     k.anchor("botleft"),
@@ -255,7 +256,7 @@ export function updateUI(ui: UIElements, state: GameState): void {
   const xpPerGem = 10;
   const gemsCollected = Math.floor(state.playerExperience / xpPerGem);
   const gemsNeeded = Math.ceil(state.maxExperience / xpPerGem);
-  ui.expCounterText.text = `${gemsCollected}/${gemsNeeded} gems`;
+  ui.expCounterText.text = `${gemsCollected}/${gemsNeeded} ${t().ui.gems}`;
 
   // Update life bar
   const healthPercentage = Math.max(0, state.playerHealth / state.maxHealth);
@@ -263,18 +264,22 @@ export function updateUI(ui: UIElements, state: GameState): void {
   ui.healthCounterText.text = `${state.playerHealth}/${state.maxHealth}`;
 
   // Update kills counter
-  ui.killsText.text = `Kills: ${state.enemiesKilled}`;
+  ui.killsText.text = `${t().ui.kills}: ${state.enemiesKilled}`;
 
   // Update level display (show game level, not player level)
-  ui.levelText.text = `Level: ${state.currentLevel} (Player Lv.${state.playerLevel})`;
+  ui.levelText.text = `${t().ui.level}: ${state.currentLevel} (${
+    t().ui.playerLevel
+  }${state.playerLevel})`;
 
   // Update stats display
-  ui.speedStatText.text = `Speed: ${Math.round(state.speed)}`;
-  ui.projectileStatText.text = `Projectiles: ${state.projectileCount}`;
-  ui.zoneStatText.text = `Range: ${state.targetingZoneRadius}`;
-  ui.fireRateStatText.text = `Fire Rate: ${(1 / state.fireInterval).toFixed(
-    1
-  )}/s`;
+  ui.speedStatText.text = `${t().ui.speed}: ${Math.round(state.speed)}`;
+  ui.projectileStatText.text = `${t().ui.projectiles}: ${
+    state.projectileCount
+  }`;
+  ui.zoneStatText.text = `${t().ui.range}: ${state.targetingZoneRadius}`;
+  ui.fireRateStatText.text = `${t().ui.fireRate}: ${(
+    1 / state.fireInterval
+  ).toFixed(1)}/s`;
 }
 
 export function updatePowerUpDisplay(
@@ -283,10 +288,10 @@ export function updatePowerUpDisplay(
   powerUps: PowerUpState
 ): void {
   const powerUpNames: Record<PowerUpType, string> = {
-    speed: "Speed Boost",
-    magnet: "Magnet",
-    invincibility: "Invincibility",
-    damage: "Damage Boost",
+    speed: t().powerUps.speedBoost,
+    magnet: t().powerUps.magnet,
+    invincibility: t().powerUps.invincibility,
+    damage: t().powerUps.damageBoost,
   };
 
   const powerUpColors: Record<PowerUpType, [number, number, number]> = {

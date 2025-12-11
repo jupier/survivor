@@ -1,0 +1,153 @@
+================================================================================
+ALL TRANSLATABLE STRINGS IN THE GAME
+================================================================================
+
+This file contains all user-facing strings extracted from the game code.
+Use this as a reference when creating translation files.
+
+================================================================================
+UI LABELS
+================================================================================
+Level
+Player Lv.
+Kills
+XP
+gems
+HP
+Stats
+Speed
+Projectiles
+Range
+Fire Rate
+FPS
+
+================================================================================
+LEVEL UP MENU
+================================================================================
+Title: Level Up!
+
+Options:
+- Increase Fire Speed
+  Description: Shoot 30% faster
+
+- Increase Projectile Count
+  Description: Fire +1 projectile per shot
+
+- Increase Movement Speed
+  Description: Move 20% faster
+
+- Increase Targeting Range
+  Description: Target enemies 30% farther away
+
+- Activate Slow Weapon
+  Description: Unlock slow effect on enemies
+
+- Increase Slow Effect
+  Description: Slow enemies by +10% (max 80%)
+
+- Activate AOE Weapon
+  Description: Unlock area damage attacks
+
+- Increase AOE Speed
+  Description: AOE attacks 20% faster
+
+- Increase Max Health
+  Description: Max health +1 and restore health
+
+================================================================================
+PAUSE MENU
+================================================================================
+Title: PAUSED
+Instruction: Press ESC to resume
+
+================================================================================
+DEATH SCREEN
+================================================================================
+Title: Game Over
+Instruction: Refresh the page to restart
+
+================================================================================
+ADMIN MENU
+================================================================================
+Title: ADMIN MENU
+Close Instruction: Press F2 to close
+
+Sections:
+- PLAYER UPGRADES
+- LEVEL SELECTION
+
+Button Labels:
+- Speed
+- Fire Rate
+- Projectiles
+- Range
+- Max Health
+- Slow Weapon
+- Slow Effect
+- AOE Weapon
+- AOE Speed
+- Level
+
+Status Labels:
+- ACTIVE
+- INACTIVE
+- (Toggle)
+- (CURRENT)
+
+Format Strings (with placeholders):
+- Speed: {value} (+20)
+- Fire Rate: {value}/s (+30%)
+- Projectiles: {value} (+1)
+- Range: {value} (+30%)
+- Max Health: {value} (+1)
+- Slow Weapon: {status} (Toggle)
+- Slow Effect: {value}% (+10%)
+- AOE Weapon: {status} (Toggle)
+- AOE Speed: {value}/s (+20%)
+- Level {number}: {name}{current}
+
+================================================================================
+POWER-UPS
+================================================================================
+Speed Boost
+Magnet
+Invincibility
+Damage Boost
+
+================================================================================
+LEVEL TRANSITION
+================================================================================
+Level Complete! Next Level Starting...
+
+================================================================================
+LEVEL NAMES
+================================================================================
+Level 1
+Level 2
+
+================================================================================
+DYNAMIC STRINGS (with variables)
+================================================================================
+These strings are built dynamically in the code and may need special handling:
+
+- "Level: {levelNumber} (Player Lv.{playerLevel})"
+- "Kills: {count}"
+- "{gemsCollected}/{gemsNeeded} gems"
+- "{health}/{maxHealth}"
+- "Speed: {speed}"
+- "Projectiles: {count}"
+- "Range: {range}"
+- "Fire Rate: {rate}/s"
+- "FPS: {fps}"
+- "{powerUpName}: {timeRemaining}s"
+
+================================================================================
+NOTES
+================================================================================
+- All strings are case-sensitive
+- Some strings contain placeholders like {value}, {status}, etc.
+- Format strings should preserve placeholders when translating
+- Level names follow the pattern "Level {number}" but can be customized
+- Power-up names are displayed with a time remaining suffix (e.g., "Speed Boost: 5.0s")
+
+================================================================================

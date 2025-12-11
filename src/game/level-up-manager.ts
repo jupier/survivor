@@ -1,4 +1,5 @@
 import { Z_INDEX } from "./z-index";
+import { t } from "./translations";
 
 // Helper function to randomly select N items from an array
 function randomSelect<T>(array: T[], count: number): T[] {
@@ -25,17 +26,53 @@ export function showLevelUpMenu(
     "levelUpMenu",
   ]);
 
-  // Menu options
+  // Menu options with descriptions - use translations
   const allOptions = [
-    { id: "fireSpeed", text: "Increase Fire Speed" },
-    { id: "projectileCount", text: "Increase Projectile Count" },
-    { id: "movementSpeed", text: "Increase Movement Speed" },
-    { id: "targetingZone", text: "Increase Targeting Range" },
-    { id: "slowWeapon", text: "Activate Slow Weapon" },
-    { id: "slowEffect", text: "Increase Slow Effect" },
-    { id: "aoeWeapon", text: "Activate AOE Weapon" },
-    { id: "aoeSpeed", text: "Increase AOE Speed" },
-    { id: "increaseHealth", text: "Increase Max Health" },
+    {
+      id: "fireSpeed",
+      text: t().menus.levelUp.options.fireSpeed.title,
+      description: t().menus.levelUp.options.fireSpeed.description,
+    },
+    {
+      id: "projectileCount",
+      text: t().menus.levelUp.options.projectileCount.title,
+      description: t().menus.levelUp.options.projectileCount.description,
+    },
+    {
+      id: "movementSpeed",
+      text: t().menus.levelUp.options.movementSpeed.title,
+      description: t().menus.levelUp.options.movementSpeed.description,
+    },
+    {
+      id: "targetingZone",
+      text: t().menus.levelUp.options.targetingZone.title,
+      description: t().menus.levelUp.options.targetingZone.description,
+    },
+    {
+      id: "slowWeapon",
+      text: t().menus.levelUp.options.slowWeapon.title,
+      description: t().menus.levelUp.options.slowWeapon.description,
+    },
+    {
+      id: "slowEffect",
+      text: t().menus.levelUp.options.slowEffect.title,
+      description: t().menus.levelUp.options.slowEffect.description,
+    },
+    {
+      id: "aoeWeapon",
+      text: t().menus.levelUp.options.aoeWeapon.title,
+      description: t().menus.levelUp.options.aoeWeapon.description,
+    },
+    {
+      id: "aoeSpeed",
+      text: t().menus.levelUp.options.aoeSpeed.title,
+      description: t().menus.levelUp.options.aoeSpeed.description,
+    },
+    {
+      id: "increaseHealth",
+      text: t().menus.levelUp.options.increaseHealth.title,
+      description: t().menus.levelUp.options.increaseHealth.description,
+    },
   ];
 
   // Filter out options based on weapon states:
@@ -64,8 +101,8 @@ export function showLevelUpMenu(
 
   // Menu background (height fixed for 3 options)
   const menuWidth = 400;
-  const baseMenuHeight = 350;
-  const optionHeight = 50;
+  const baseMenuHeight = 380;
+  const optionHeight = 70; // Increased to fit title + description
   const optionSpacing = 10;
   const menuHeight = baseMenuHeight; // Fixed height for 3 options
   const menuX = (k.width() - menuWidth) / 2;
@@ -83,7 +120,7 @@ export function showLevelUpMenu(
 
   // Title
   k.add([
-    k.text("Level Up!", { size: 32 }),
+    k.text(t().menus.levelUp.title, { size: 32 }),
     k.color(255, 255, 255),
     k.pos(k.width() / 2, menuY + 40),
     k.anchor("center"),
@@ -112,7 +149,7 @@ export function showLevelUpMenu(
       "levelUpMenu",
     ]);
 
-    // Option text
+    // Option title text
     k.add([
       k.text(option.text, { size: 20 }),
       k.color(
@@ -120,7 +157,22 @@ export function showLevelUpMenu(
         isEnabled ? 255 : 150,
         isEnabled ? 255 : 150
       ),
-      k.pos(menuX + menuWidth / 2, optionY + optionHeight / 2),
+      k.pos(menuX + menuWidth / 2, optionY + 18),
+      k.anchor("center"),
+      k.fixed(),
+      k.z(Z_INDEX.LEVEL_UP_MENU_HIGHLIGHT),
+      "levelUpMenu",
+    ]);
+
+    // Option description text
+    k.add([
+      k.text(option.description, { size: 14 }),
+      k.color(
+        isEnabled ? 180 : 100,
+        isEnabled ? 180 : 100,
+        isEnabled ? 180 : 100
+      ),
+      k.pos(menuX + menuWidth / 2, optionY + 42),
       k.anchor("center"),
       k.fixed(),
       k.z(Z_INDEX.LEVEL_UP_MENU_HIGHLIGHT),

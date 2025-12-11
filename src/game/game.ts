@@ -23,6 +23,7 @@ import { showDamageNumber } from "./damage-numbers";
 import { spawnPowerUp, updatePowerUps } from "./powerup-manager";
 import { spawnBoss } from "./enemy-manager";
 import { getLevelConfig, LevelConfig } from "./level-config";
+import { t } from "./translations";
 import { Z_INDEX } from "./z-index";
 import {
   showAdminMenu,
@@ -83,6 +84,9 @@ export class Game {
   }
 
   private async setupGame(): Promise<void> {
+    // Load language preference from localStorage (done automatically in translations.ts)
+    // Language is already loaded when translations module is imported
+
     // Load all sprites
     await loadAllSprites(this.k);
 
@@ -203,7 +207,13 @@ export class Game {
       }
       this.state.isPaused = !this.state.isPaused;
       if (this.state.isPaused) {
-        showPauseMenu(this.k);
+        showPauseMenu(this.k, {
+          onLanguageChange: () => {
+            // Force immediate UI update when language changes
+            updateUI(this.ui, this.state);
+            updatePowerUpDisplay(this.k, this.ui, this.state.powerUps);
+          },
+        });
       } else {
         hidePauseMenu(this.k);
       }
@@ -892,7 +902,7 @@ export class Game {
             if (avgFrameTime > 0) {
               const fps = Math.round(1 / avgFrameTime);
               if (this.ui && this.ui.fpsText) {
-                this.ui.fpsText.text = `FPS: ${fps}`;
+                this.ui.fpsText.text = `${t().ui.fps}: ${fps}`;
               }
             }
           }
@@ -1141,7 +1151,7 @@ export class Game {
 
     // Transition message
     const messageText = this.k.add([
-      this.k.text("Level Complete! Next Level Starting...", { size: 24 }),
+      this.k.text(t().levelTransition.complete, { size: 24 }),
       this.k.color(255, 255, 255),
       this.k.pos(this.k.width() / 2, this.k.height() / 2 + 30),
       this.k.anchor("center"),

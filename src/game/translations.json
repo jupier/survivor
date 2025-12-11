@@ -1,0 +1,121 @@
+{
+  "ui": {
+    "level": "Level",
+    "playerLevel": "Player Lv.",
+    "kills": "Kills",
+    "xp": "XP",
+    "gems": "gems",
+    "hp": "HP",
+    "stats": "Stats",
+    "speed": "Speed",
+    "projectiles": "Projectiles",
+    "range": "Range",
+    "fireRate": "Fire Rate",
+    "fps": "FPS"
+  },
+  "menus": {
+    "levelUp": {
+      "title": "Level Up!",
+      "options": {
+        "fireSpeed": {
+          "title": "Increase Fire Speed",
+          "description": "Shoot 30% faster"
+        },
+        "projectileCount": {
+          "title": "Increase Projectile Count",
+          "description": "Fire +1 projectile per shot"
+        },
+        "movementSpeed": {
+          "title": "Increase Movement Speed",
+          "description": "Move 20% faster"
+        },
+        "targetingZone": {
+          "title": "Increase Targeting Range",
+          "description": "Target enemies 30% farther away"
+        },
+        "slowWeapon": {
+          "title": "Activate Slow Weapon",
+          "description": "Unlock slow effect on enemies"
+        },
+        "slowEffect": {
+          "title": "Increase Slow Effect",
+          "description": "Slow enemies by +10% (max 80%)"
+        },
+        "aoeWeapon": {
+          "title": "Activate AOE Weapon",
+          "description": "Unlock area damage attacks"
+        },
+        "aoeSpeed": {
+          "title": "Increase AOE Speed",
+          "description": "AOE attacks 20% faster"
+        },
+        "increaseHealth": {
+          "title": "Increase Max Health",
+          "description": "Max health +1 and restore health"
+        }
+      }
+    },
+    "pause": {
+      "title": "PAUSED",
+      "instruction": "Press ESC to resume"
+    },
+    "death": {
+      "title": "Game Over",
+      "instruction": "Refresh the page to restart"
+    },
+    "admin": {
+      "title": "ADMIN MENU",
+      "closeInstruction": "Press F2 to close",
+      "sections": {
+        "playerUpgrades": "PLAYER UPGRADES",
+        "levelSelection": "LEVEL SELECTION"
+      },
+      "buttons": {
+        "speed": "Speed",
+        "fireRate": "Fire Rate",
+        "projectiles": "Projectiles",
+        "range": "Range",
+        "maxHealth": "Max Health",
+        "slowWeapon": "Slow Weapon",
+        "slowEffect": "Slow Effect",
+        "aoeWeapon": "AOE Weapon",
+        "aoeSpeed": "AOE Speed",
+        "level": "Level",
+        "current": " (CURRENT)",
+        "active": "ACTIVE",
+        "inactive": "INACTIVE",
+        "toggle": "(Toggle)"
+      },
+      "formats": {
+        "speed": "Speed: {value} (+20)",
+        "fireRate": "Fire Rate: {value}/s (+30%)",
+        "projectiles": "Projectiles: {value} (+1)",
+        "range": "Range: {value} (+30%)",
+        "maxHealth": "Max Health: {value} (+1)",
+        "slowWeapon": "Slow Weapon: {status} (Toggle)",
+        "slowEffect": "Slow Effect: {value}% (+10%)",
+        "aoeWeapon": "AOE Weapon: {status} (Toggle)",
+        "aoeSpeed": "AOE Speed: {value}/s (+20%)",
+        "level": "Level {number}: {name}{current}"
+      }
+    }
+  },
+  "powerUps": {
+    "speedBoost": "Speed Boost",
+    "magnet": "Magnet",
+    "invincibility": "Invincibility",
+    "damageBoost": "Damage Boost"
+  },
+  "levelTransition": {
+    "complete": "Level Complete! Next Level Starting..."
+  },
+  "levels": {
+    "1": "Level 1",
+    "2": "Level 2"
+  },
+  "language": {
+    "select": "Language",
+    "english": "English",
+    "french": "Français"
+  }
+}

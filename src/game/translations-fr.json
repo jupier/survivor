@@ -1,0 +1,121 @@
+{
+  "ui": {
+    "level": "Niveau",
+    "playerLevel": "Niveau Joueur",
+    "kills": "Morts",
+    "xp": "XP",
+    "gems": "gemmes",
+    "hp": "PV",
+    "stats": "Statistiques",
+    "speed": "Vitesse",
+    "projectiles": "Projectiles",
+    "range": "Portée",
+    "fireRate": "Cadence de tir",
+    "fps": "IPS"
+  },
+  "menus": {
+    "levelUp": {
+      "title": "Montée de niveau !",
+      "options": {
+        "fireSpeed": {
+          "title": "Augmenter la vitesse de tir",
+          "description": "Tirer 30% plus vite"
+        },
+        "projectileCount": {
+          "title": "Augmenter le nombre de projectiles",
+          "description": "Tirer +1 projectile par tir"
+        },
+        "movementSpeed": {
+          "title": "Augmenter la vitesse de déplacement",
+          "description": "Se déplacer 20% plus vite"
+        },
+        "targetingZone": {
+          "title": "Augmenter la portée de visée",
+          "description": "Viser les ennemis 30% plus loin"
+        },
+        "slowWeapon": {
+          "title": "Activer l'arme de ralentissement",
+          "description": "Débloquer l'effet de ralentissement sur les ennemis"
+        },
+        "slowEffect": {
+          "title": "Augmenter l'effet de ralentissement",
+          "description": "Ralentir les ennemis de +10% (max 80%)"
+        },
+        "aoeWeapon": {
+          "title": "Activer l'arme de zone",
+          "description": "Débloquer les attaques de dégâts de zone"
+        },
+        "aoeSpeed": {
+          "title": "Augmenter la vitesse de l'arme de zone",
+          "description": "Attaques de zone 20% plus rapides"
+        },
+        "increaseHealth": {
+          "title": "Augmenter la santé maximale",
+          "description": "Santé max +1 et restauration de santé"
+        }
+      }
+    },
+    "pause": {
+      "title": "EN PAUSE",
+      "instruction": "Appuyez sur ESC pour reprendre"
+    },
+    "death": {
+      "title": "Partie terminée",
+      "instruction": "Actualisez la page pour redémarrer"
+    },
+    "admin": {
+      "title": "MENU ADMIN",
+      "closeInstruction": "Appuyez sur F2 pour fermer",
+      "sections": {
+        "playerUpgrades": "AMÉLIORATIONS DU JOUEUR",
+        "levelSelection": "SÉLECTION DE NIVEAU"
+      },
+      "buttons": {
+        "speed": "Vitesse",
+        "fireRate": "Cadence de tir",
+        "projectiles": "Projectiles",
+        "range": "Portée",
+        "maxHealth": "Santé maximale",
+        "slowWeapon": "Arme de ralentissement",
+        "slowEffect": "Effet de ralentissement",
+        "aoeWeapon": "Arme de zone",
+        "aoeSpeed": "Vitesse de l'arme de zone",
+        "level": "Niveau",
+        "current": " (ACTUEL)",
+        "active": "ACTIF",
+        "inactive": "INACTIF",
+        "toggle": "(Basculer)"
+      },
+      "formats": {
+        "speed": "Vitesse : {value} (+20)",
+        "fireRate": "Cadence de tir : {value}/s (+30%)",
+        "projectiles": "Projectiles : {value} (+1)",
+        "range": "Portée : {value} (+30%)",
+        "maxHealth": "Santé maximale : {value} (+1)",
+        "slowWeapon": "Arme de ralentissement : {status} (Basculer)",
+        "slowEffect": "Effet de ralentissement : {value}% (+10%)",
+        "aoeWeapon": "Arme de zone : {status} (Basculer)",
+        "aoeSpeed": "Vitesse de l'arme de zone : {value}/s (+20%)",
+        "level": "Niveau {number} : {name}{current}"
+      }
+    }
+  },
+  "powerUps": {
+    "speedBoost": "Boost de vitesse",
+    "magnet": "Aimant",
+    "invincibility": "Invincibilité",
+    "damageBoost": "Boost de dégâts"
+  },
+  "levelTransition": {
+    "complete": "Niveau terminé ! Démarrage du niveau suivant..."
+  },
+  "levels": {
+    "1": "Niveau 1",
+    "2": "Niveau 2"
+  },
+  "language": {
+    "select": "Langue",
+    "english": "Anglais",
+    "french": "Français"
+  }
+}
