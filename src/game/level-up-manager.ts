@@ -541,7 +541,7 @@ export function showLevelUpMenu(
     const isEnabled = true;
 
     // Option card background
-    const optionBg = k.add([
+    k.add([
       k.rect(optionWidth, optionHeight),
       k.color(isEnabled ? 70 : 40, isEnabled ? 70 : 40, isEnabled ? 70 : 40),
       k.pos(optionX, startY),
@@ -644,29 +644,6 @@ export function showLevelUpMenu(
       ]);
     });
 
-    // Hover effect - very subtle highlight border
-    let hoverRect: any = null;
-    optionBg.onHover(() => {
-      if (isEnabled && !hoverRect) {
-        hoverRect = k.add([
-          k.rect(optionWidth + 4, optionHeight + 4),
-          k.color(100, 100, 120), // Very subtle dark gray border
-          k.pos(optionX - 2, startY - 2),
-          k.anchor("topleft"),
-          k.fixed(),
-          k.z(Z_INDEX.LEVEL_UP_MENU_HIGHLIGHT - 1),
-          "levelUpMenu",
-        ]);
-      }
-    });
-
-    optionBg.onHoverEnd(() => {
-      if (hoverRect) {
-        hoverRect.destroy();
-        hoverRect = null;
-      }
-    });
-
     // Display key number at the bottom of each card
     const keyNumber = index + 1;
     const keyY = startY + optionHeight - 25;
@@ -679,7 +656,17 @@ export function showLevelUpMenu(
       k.z(Z_INDEX.LEVEL_UP_MENU_HIGHLIGHT),
       "levelUpMenu",
     ]);
-
-    // Click functionality removed - use keyboard shortcuts (1, 2, 3) or (&, é, ") for AZERTY instead
   });
+
+  // Add instruction text at the bottom of the menu
+  const instructionY = startY + optionHeight + 30;
+  k.add([
+    k.text('Press 1/2/3 or &/é/"', { size: 16 }),
+    k.color(200, 200, 200),
+    k.pos(k.width() / 2, instructionY),
+    k.anchor("center"),
+    k.fixed(),
+    k.z(Z_INDEX.LEVEL_UP_MENU_HIGHLIGHT),
+    "levelUpMenu",
+  ]);
 }

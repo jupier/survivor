@@ -130,8 +130,14 @@ export function setupPlayerMovement(
     }
 
     if (isMoving) {
-      player.pos.x += moveX;
-      player.pos.y += moveY;
+      const newX = player.pos.x + moveX;
+      const newY = player.pos.y + moveY;
+
+      // Constrain player to game area (account for player size)
+      const playerSize = 24; // Approximate player sprite size
+      const halfSize = playerSize / 2;
+      player.pos.x = Math.max(halfSize, Math.min(k.width() - halfSize, newX));
+      player.pos.y = Math.max(halfSize, Math.min(k.height() - halfSize, newY));
     }
   });
 }

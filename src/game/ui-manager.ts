@@ -19,6 +19,7 @@ export interface UIElements {
   playerLevelText: any;
   slowWeaponText: any;
   aoeWeaponText: any;
+  lowHealthBorder: any[];
   powerUpContainer: any;
   powerUpTexts: Map<PowerUpType, any>;
 }
@@ -253,6 +254,66 @@ export function createUI(
   // Store the starting Y position for power-up display
   const powerUpStartY = currentY + 10;
 
+  // Low health border (red halo around screen edges) - initially hidden
+  const borderWidth = 8; // Thickness of the border
+  const lowHealthBorder: any[] = [];
+
+  // Top border
+  lowHealthBorder.push(
+    k.add([
+      k.rect(k.width(), borderWidth),
+      k.color(255, 0, 0), // Red
+      k.pos(0, 0),
+      k.anchor("topleft"),
+      k.fixed(),
+      k.z(Z_INDEX.LOW_HEALTH_BORDER),
+      k.opacity(0), // Initially hidden
+      "lowHealthBorder",
+    ])
+  );
+
+  // Bottom border
+  lowHealthBorder.push(
+    k.add([
+      k.rect(k.width(), borderWidth),
+      k.color(255, 0, 0), // Red
+      k.pos(0, k.height() - borderWidth),
+      k.anchor("topleft"),
+      k.fixed(),
+      k.z(Z_INDEX.LOW_HEALTH_BORDER),
+      k.opacity(0), // Initially hidden
+      "lowHealthBorder",
+    ])
+  );
+
+  // Left border
+  lowHealthBorder.push(
+    k.add([
+      k.rect(borderWidth, k.height()),
+      k.color(255, 0, 0), // Red
+      k.pos(0, 0),
+      k.anchor("topleft"),
+      k.fixed(),
+      k.z(Z_INDEX.LOW_HEALTH_BORDER),
+      k.opacity(0), // Initially hidden
+      "lowHealthBorder",
+    ])
+  );
+
+  // Right border
+  lowHealthBorder.push(
+    k.add([
+      k.rect(borderWidth, k.height()),
+      k.color(255, 0, 0), // Red
+      k.pos(k.width() - borderWidth, 0),
+      k.anchor("topleft"),
+      k.fixed(),
+      k.z(Z_INDEX.LOW_HEALTH_BORDER),
+      k.opacity(0), // Initially hidden
+      "lowHealthBorder",
+    ])
+  );
+
   return {
     levelText,
     timerText,
@@ -269,12 +330,17 @@ export function createUI(
     playerLevelText,
     slowWeaponText,
     aoeWeaponText,
+    lowHealthBorder,
     powerUpContainer: { pos: { x: uiPadding, y: powerUpStartY } },
     powerUpTexts: new Map(),
   };
 }
 
-export function updateUI(ui: UIElements, state: GameState): void {
+export function updateUI(
+  ui: UIElements,
+  state: GameState,
+  gameTime?: number
+): void {
   const barWidth = 250;
 
   // Update timer
@@ -336,6 +402,23 @@ export function updateUI(ui: UIElements, state: GameState): void {
   } else {
     ui.aoeWeaponText.opacity = 0;
   }
+
+  // Update low health border (red halo when health is 1)
+  const showLowHealthBorder = state.playerHealth === 1;
+  ui.lowHealthBorder.forEach((border) => {
+    if (border && border.exists()) {
+      // Smooth transition with pulsing effect when visible
+      if (showLowHealthBorder) {
+        // Pulsing effect: opacity oscillates between 0.4 and 0.8
+        // Use gameTime if provided, otherwise use a simple time-based pulse
+        const time = gameTime !== undefined ? gameTime : Date.now() / 1000;
+        const pulse = 0.6 + Math.sin(time * 3) * 0.2; // 3 pulses per second
+        border.opacity = pulse;
+      } else {
+        border.opacity = 0;
+      }
+    }
+  });
 }
 
 export function updatePowerUpDisplay(

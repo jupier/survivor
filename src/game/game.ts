@@ -493,6 +493,11 @@ export class Game {
       // Play death sound
       this.sounds.playEnemyDeath();
 
+      // Screen shake on enemy death (more intense for bosses)
+      const shakeIntensity = enemyType === "boss" ? 8 : 3;
+      const shakeDuration = enemyType === "boss" ? 0.3 : 0.15;
+      this.shakeScreen(shakeIntensity, shakeDuration);
+
       // Spawn XP point at enemy position
       spawnXP(this.k, enemy.pos);
 
@@ -917,7 +922,7 @@ export class Game {
         (this as any).lastUIUpdateTime = currentTime;
       }
       if (currentTime - (this as any).lastUIUpdateTime >= 0.1) {
-        updateUI(this.ui, this.state);
+        updateUI(this.ui, this.state, this.k.time());
         updatePowerUpDisplay(this.k, this.ui, this.state.powerUps);
         (this as any).lastUIUpdateTime = currentTime;
       }
@@ -1390,6 +1395,35 @@ export class Game {
     this.isAdminMenuOpen = false;
     this.state.isPaused = false;
     this.isTransitioning = false;
+  }
+
+  private shakeScreen(intensity: number, duration: number): void {
+    // Create screen shake effect by moving camera
+    const shakeCount = Math.floor(duration * 60); // 60 updates per second
+    let currentShake = 0;
+
+    const shakeTimer = this.k.loop(1 / 60, () => {
+      if (currentShake >= shakeCount) {
+        shakeTimer.cancel();
+        // Reset camera
+        this.k.camPos(this.k.width() / 2, this.k.height() / 2);
+        return;
+      }
+
+      // Random shake offset
+      const shakeX = (Math.random() - 0.5) * intensity;
+      const shakeY = (Math.random() - 0.5) * intensity;
+
+      // Apply shake with decay
+      const progress = currentShake / shakeCount;
+      const decay = 1 - progress; // Fade out over time
+      this.k.camPos(
+        this.k.width() / 2 + shakeX * decay,
+        this.k.height() / 2 + shakeY * decay
+      );
+
+      currentShake++;
+    });
   }
 
   private handlePlayerDeath(): void {

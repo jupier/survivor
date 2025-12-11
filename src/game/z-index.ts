@@ -36,6 +36,7 @@ export const Z_INDEX = {
   UI_TEXT: 103,
   UI_STATS: 110,
   UI_POWER_UPS: 111,
+  LOW_HEALTH_BORDER: 112,
 
   // Menus and overlays
   LEVEL_TRANSITION_OVERLAY: 200,
