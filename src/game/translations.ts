@@ -27,6 +27,8 @@ export interface Translations {
     range: string;
     fireRate: string;
     fps: string;
+    slowWeapon: string;
+    aoeWeapon: string;
   };
   menus: {
     levelUp: {
