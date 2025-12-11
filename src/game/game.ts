@@ -354,28 +354,31 @@ export class Game {
         currentSlowActive !== lastSlowActive ||
         currentRadius !== lastRadius
       ) {
-        if (currentAOEActive) {
-          // Show orange overlay for AOE weapon
-          this.aoeZoneOverlay.opacity = 0.15;
-          this.aoeZoneOverlay.radius = currentRadius;
-          // Hide blue overlay
-          this.targetingZoneOverlay.opacity = 0;
-          // Reduce white zone opacity
-          this.targetingZone.opacity = 0.3;
-        } else if (currentSlowActive) {
-          // Show blue overlay for slow weapon
+        // Update targeting zone - always transparent (no white line)
+        this.targetingZone.opacity = 0;
+
+        if (currentAOEActive && currentSlowActive) {
+          // Both weapons active - show both overlays
+          // Blue overlay (slow) on bottom
           this.targetingZoneOverlay.opacity = 0.2;
           this.targetingZoneOverlay.radius = currentRadius;
-          // Hide orange overlay
+          // Orange overlay (AOE) on top
+          this.aoeZoneOverlay.opacity = 0.15;
+          this.aoeZoneOverlay.radius = currentRadius;
+        } else if (currentAOEActive) {
+          // Only AOE weapon active
+          this.aoeZoneOverlay.opacity = 0.15;
+          this.aoeZoneOverlay.radius = currentRadius;
+          this.targetingZoneOverlay.opacity = 0;
+        } else if (currentSlowActive) {
+          // Only slow weapon active
+          this.targetingZoneOverlay.opacity = 0.2;
+          this.targetingZoneOverlay.radius = currentRadius;
           this.aoeZoneOverlay.opacity = 0;
-          // Reduce white zone opacity
-          this.targetingZone.opacity = 0.3;
         } else {
-          // Hide both overlays
+          // No weapons active - hide both overlays
           this.targetingZoneOverlay.opacity = 0;
           this.aoeZoneOverlay.opacity = 0;
-          // Normal white zone opacity
-          this.targetingZone.opacity = 0.5;
         }
         lastAOEActive = currentAOEActive;
         lastSlowActive = currentSlowActive;
@@ -384,7 +387,8 @@ export class Game {
         if (currentRadius !== lastRadius) {
           if (currentAOEActive) {
             this.aoeZoneOverlay.radius = currentRadius;
-          } else if (currentSlowActive) {
+          }
+          if (currentSlowActive) {
             this.targetingZoneOverlay.radius = currentRadius;
           }
         }

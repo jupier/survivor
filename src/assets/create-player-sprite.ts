@@ -24,19 +24,29 @@ function drawPlayerFrame(
     ctx.arc(centerX, centerY - 6, 6, 0, Math.PI * 2);
     ctx.fill();
 
-    // Draw body from behind
+    // Draw body from behind (more rounded)
     ctx.fillStyle = "#4a9eff"; // Blue body
-    ctx.fillRect(centerX - 8, centerY - 2, 16, 12);
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY + 4, 7, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Draw arms from behind (swinging)
+    // Draw arms from behind (swinging, more rounded)
     ctx.fillStyle = "#ffdbac"; // Skin color
-    ctx.fillRect(centerX - 10, centerY - 2 + armOffset, 4, 8);
-    ctx.fillRect(centerX + 6, centerY - 2 - armOffset, 4, 8);
+    ctx.beginPath();
+    ctx.ellipse(centerX - 8, centerY + 2 + armOffset, 2, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(centerX + 8, centerY + 2 - armOffset, 2, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Draw legs from behind (alternating)
+    // Draw legs from behind (alternating, more rounded)
     ctx.fillStyle = "#2a5a9f"; // Darker blue for legs
-    ctx.fillRect(centerX - 6, centerY + 10 + legOffset, 4, 6);
-    ctx.fillRect(centerX + 2, centerY + 10 - legOffset, 4, 6);
+    ctx.beginPath();
+    ctx.ellipse(centerX - 4, centerY + 13 + legOffset, 2, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(centerX + 4, centerY + 13 - legOffset, 2, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
   } else if (direction === "down") {
     // Front view - with eyes
     // Draw head
@@ -50,19 +60,29 @@ function drawPlayerFrame(
     ctx.fillRect(centerX - 3, centerY - 8, 2, 2);
     ctx.fillRect(centerX + 1, centerY - 8, 2, 2);
 
-    // Draw body
+    // Draw body (more rounded)
     ctx.fillStyle = "#4a9eff"; // Blue body
-    ctx.fillRect(centerX - 8, centerY - 2, 16, 12);
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY + 4, 7, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Draw arms (swinging)
+    // Draw arms (swinging, more rounded)
     ctx.fillStyle = "#ffdbac"; // Skin color
-    ctx.fillRect(centerX - 10, centerY - 2 + armOffset, 4, 8);
-    ctx.fillRect(centerX + 6, centerY - 2 - armOffset, 4, 8);
+    ctx.beginPath();
+    ctx.ellipse(centerX - 8, centerY + 2 + armOffset, 2, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(centerX + 8, centerY + 2 - armOffset, 2, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Draw legs (alternating)
+    // Draw legs (alternating, more rounded)
     ctx.fillStyle = "#2a5a9f"; // Darker blue for legs
-    ctx.fillRect(centerX - 6, centerY + 10 + legOffset, 4, 6);
-    ctx.fillRect(centerX + 2, centerY + 10 - legOffset, 4, 6);
+    ctx.beginPath();
+    ctx.ellipse(centerX - 4, centerY + 13 + legOffset, 2, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(centerX + 4, centerY + 13 - legOffset, 2, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
   } else if (direction === "left") {
     // Side view - profile facing left
     // Draw head (profile)
@@ -75,18 +95,26 @@ function drawPlayerFrame(
     ctx.fillStyle = "#000000";
     ctx.fillRect(centerX - 4, centerY - 8, 2, 2);
 
-    // Draw body (side view)
+    // Draw body (side view, more rounded)
     ctx.fillStyle = "#4a9eff"; // Blue body
-    ctx.fillRect(centerX - 8, centerY - 2, 12, 12);
+    ctx.beginPath();
+    ctx.ellipse(centerX - 2, centerY + 4, 5, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Draw arm (one arm visible)
+    // Draw arm (one arm visible, more rounded)
     ctx.fillStyle = "#ffdbac"; // Skin color
-    ctx.fillRect(centerX - 10, centerY - 2 + armOffset, 4, 8);
+    ctx.beginPath();
+    ctx.ellipse(centerX - 8, centerY + 2 + armOffset, 2, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Draw legs (one in front)
+    // Draw legs (one in front, more rounded)
     ctx.fillStyle = "#2a5a9f"; // Darker blue for legs
-    ctx.fillRect(centerX - 6, centerY + 10 + legOffset, 4, 6);
-    ctx.fillRect(centerX - 2, centerY + 10 - legOffset, 4, 6);
+    ctx.beginPath();
+    ctx.ellipse(centerX - 4, centerY + 13 + legOffset, 2, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY + 13 - legOffset, 2, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
   } else {
     // Right - side view - profile facing right
     // Draw head (profile)
@@ -99,18 +127,26 @@ function drawPlayerFrame(
     ctx.fillStyle = "#000000";
     ctx.fillRect(centerX + 2, centerY - 8, 2, 2);
 
-    // Draw body (side view)
+    // Draw body (side view, more rounded)
     ctx.fillStyle = "#4a9eff"; // Blue body
-    ctx.fillRect(centerX - 4, centerY - 2, 12, 12);
+    ctx.beginPath();
+    ctx.ellipse(centerX + 2, centerY + 4, 5, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Draw arm (one arm visible)
+    // Draw arm (one arm visible, more rounded)
     ctx.fillStyle = "#ffdbac"; // Skin color
-    ctx.fillRect(centerX + 6, centerY - 2 - armOffset, 4, 8);
+    ctx.beginPath();
+    ctx.ellipse(centerX + 8, centerY + 2 - armOffset, 2, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Draw legs (one in front)
+    // Draw legs (one in front, more rounded)
     ctx.fillStyle = "#2a5a9f"; // Darker blue for legs
-    ctx.fillRect(centerX - 2, centerY + 10 + legOffset, 4, 6);
-    ctx.fillRect(centerX + 2, centerY + 10 - legOffset, 4, 6);
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY + 13 + legOffset, 2, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(centerX + 4, centerY + 13 - legOffset, 2, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 

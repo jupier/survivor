@@ -22,8 +22,8 @@ export const Z_INDEX = {
   POWER_UPS: 46,
   BOSS_HEALTH_BAR_BG: 46,
   BOSS_HEALTH_BAR_FILL: 47,
-  AOE_ZONE_OVERLAY: 48,
-  TARGETING_ZONE_OVERLAY: 49,
+  TARGETING_ZONE_OVERLAY: 48, // Blue overlay (slow weapon) - lower layer
+  AOE_ZONE_OVERLAY: 49, // Orange overlay (AOE weapon) - upper layer
   TARGETING_ZONE: 50,
   PLAYER: 50,
 
