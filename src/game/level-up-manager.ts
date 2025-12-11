@@ -192,7 +192,7 @@ export function showLevelUpMenu(
     let iconElements: any[] = [];
 
     switch (optionId) {
-      case "fireSpeed":
+      case "fireSpeed": {
         // Fire/Speed icon - orange-red with upward arrows
         iconColor = [255, 120, 50];
         const fireBg = k.add([
@@ -225,8 +225,9 @@ export function showLevelUpMenu(
         ]);
         iconElements = [fireBg, fireCircle, fireArrow];
         break;
+      }
 
-      case "projectileCount":
+      case "projectileCount": {
         // Projectiles icon - blue with bullet shapes
         iconColor = [80, 180, 255];
         const projBg = k.add([
@@ -267,8 +268,9 @@ export function showLevelUpMenu(
         ]);
         iconElements = [projBg, projCircle, projSymbol, projSymbol2];
         break;
+      }
 
-      case "movementSpeed":
+      case "movementSpeed": {
         // Speed icon - green with running symbol
         iconColor = [80, 255, 120];
         const speedBg = k.add([
@@ -300,8 +302,9 @@ export function showLevelUpMenu(
         ]);
         iconElements = [speedBg, speedCircle, speedSymbol];
         break;
+      }
 
-      case "targetingZone":
+      case "targetingZone": {
         // Range icon - yellow with crosshair
         iconColor = [255, 220, 80];
         const rangeBg = k.add([
@@ -333,8 +336,9 @@ export function showLevelUpMenu(
         ]);
         iconElements = [rangeBg, rangeCircle, rangeSymbol];
         break;
+      }
 
-      case "slowWeapon":
+      case "slowWeapon": {
         // Slow weapon icon - blue with snowflake
         iconColor = [100, 150, 255];
         const slowBg = k.add([
@@ -366,8 +370,9 @@ export function showLevelUpMenu(
         ]);
         iconElements = [slowBg, slowCircle, slowSymbol];
         break;
+      }
 
-      case "slowEffect":
+      case "slowEffect": {
         // Slow effect icon - light blue
         iconColor = [150, 180, 255];
         const slowEffBg = k.add([
@@ -399,8 +404,9 @@ export function showLevelUpMenu(
         ]);
         iconElements = [slowEffBg, slowEffCircle, slowEffSymbol];
         break;
+      }
 
-      case "aoeWeapon":
+      case "aoeWeapon": {
         // AOE icon - orange with explosion
         iconColor = [255, 150, 50];
         const aoeBg = k.add([
@@ -432,8 +438,9 @@ export function showLevelUpMenu(
         ]);
         iconElements = [aoeBg, aoeCircle, aoeSymbol];
         break;
+      }
 
-      case "aoeSpeed":
+      case "aoeSpeed": {
         // AOE speed icon - light orange
         iconColor = [255, 180, 80];
         const aoeSpeedBg = k.add([
@@ -465,8 +472,9 @@ export function showLevelUpMenu(
         ]);
         iconElements = [aoeSpeedBg, aoeSpeedCircle, aoeSpeedSymbol];
         break;
+      }
 
-      case "increaseHealth":
+      case "increaseHealth": {
         // Health icon - red with heart
         iconColor = [255, 100, 100];
         const healthBg = k.add([
@@ -498,8 +506,9 @@ export function showLevelUpMenu(
         ]);
         iconElements = [healthBg, healthCircle, healthSymbol];
         break;
+      }
 
-      default:
+      default: {
         // Default icon
         const defaultBg = k.add([
           k.circle(iconSize / 2),
@@ -511,6 +520,8 @@ export function showLevelUpMenu(
           "levelUpMenu",
         ]);
         iconElements = [defaultBg];
+        break;
+      }
     }
 
     // Add pulsing animation to the main shape (usually the circle)

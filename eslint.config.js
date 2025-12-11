@@ -19,6 +19,7 @@ export default [
         document: "readonly",
         window: "readonly",
         console: "readonly",
+        localStorage: "readonly",
         CanvasRenderingContext2D: "readonly",
         HTMLCanvasElement: "readonly",
       },
