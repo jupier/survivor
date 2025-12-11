@@ -11,7 +11,9 @@
     "projectiles": "Projectiles",
     "range": "Range",
     "fireRate": "Fire Rate",
-    "fps": "FPS"
+    "fps": "FPS",
+    "slowWeapon": "Slow Weapon",
+    "aoeWeapon": "AOE Weapon"
   },
   "menus": {
     "levelUp": {

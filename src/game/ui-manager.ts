@@ -16,6 +16,9 @@ export interface UIElements {
   zoneStatText: any;
   fireRateStatText: any;
   fpsText: any;
+  playerLevelText: any;
+  slowWeaponText: any;
+  aoeWeaponText: any;
   powerUpContainer: any;
   powerUpTexts: Map<PowerUpType, any>;
 }
@@ -202,7 +205,39 @@ export function createUI(
     k.fixed(),
     k.z(Z_INDEX.UI_STATS),
   ]);
+  statsY += 25;
+
+  // Player Level (top right, below stats)
+  const playerLevelText = k.add([
+    k.text(`${t().ui.playerLevel} 1`, { size: 16 }),
+    k.color(255, 215, 0), // Gold color
+    k.pos(statsX, statsY),
+    k.anchor("topleft"),
+    k.fixed(),
+    k.z(Z_INDEX.UI_STATS),
+  ]);
+  statsY += 25;
+
+  // Slow Weapon Level (if active)
+  const slowWeaponText = k.add([
+    k.text("", { size: 14 }),
+    k.color(100, 150, 255), // Light blue
+    k.pos(statsX, statsY),
+    k.anchor("topleft"),
+    k.fixed(),
+    k.z(Z_INDEX.UI_STATS),
+  ]);
   statsY += 20;
+
+  // AOE Weapon Level (if active)
+  const aoeWeaponText = k.add([
+    k.text("", { size: 14 }),
+    k.color(255, 150, 50), // Orange
+    k.pos(statsX, statsY),
+    k.anchor("topleft"),
+    k.fixed(),
+    k.z(Z_INDEX.UI_STATS),
+  ]);
 
   // FPS counter (bottom left)
   const fpsText = k.add([
@@ -231,6 +266,9 @@ export function createUI(
     zoneStatText,
     fireRateStatText,
     fpsText,
+    playerLevelText,
+    slowWeaponText,
+    aoeWeaponText,
     powerUpContainer: { pos: { x: uiPadding, y: powerUpStartY } },
     powerUpTexts: new Map(),
   };
@@ -280,6 +318,26 @@ export function updateUI(ui: UIElements, state: GameState): void {
   ui.fireRateStatText.text = `${t().ui.fireRate}: ${(
     1 / state.fireInterval
   ).toFixed(1)}/s`;
+
+  // Update player level
+  ui.playerLevelText.text = `${t().ui.playerLevel} ${state.playerLevel}`;
+
+  // Update slow weapon level (only show if active)
+  if (state.slowWeaponActive) {
+    ui.slowWeaponText.text = `${t().ui.slowWeapon}: ${state.slowEffectPercentage}%`;
+    ui.slowWeaponText.opacity = 1;
+  } else {
+    ui.slowWeaponText.opacity = 0;
+  }
+
+  // Update AOE weapon level (only show if active)
+  if (state.aoeWeaponActive) {
+    const aoeSpeed = (1 / state.aoeWeaponCooldown).toFixed(1);
+    ui.aoeWeaponText.text = `${t().ui.aoeWeapon}: ${aoeSpeed}/s`;
+    ui.aoeWeaponText.opacity = 1;
+  } else {
+    ui.aoeWeaponText.opacity = 0;
+  }
 }
 
 export function updatePowerUpDisplay(

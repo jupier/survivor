@@ -11,7 +11,9 @@
     "projectiles": "Projectiles",
     "range": "Portée",
     "fireRate": "Cadence de tir",
-    "fps": "IPS"
+    "fps": "IPS",
+    "slowWeapon": "Arme de ralentissement",
+    "aoeWeapon": "Arme de zone"
   },
   "menus": {
     "levelUp": {
