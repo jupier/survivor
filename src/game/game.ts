@@ -1081,6 +1081,30 @@ export class Game {
       enemy.destroy();
     }
 
+    // Clear all XP items
+    const allXP = this.k.get("xp");
+    for (const xp of allXP) {
+      xp.destroy();
+    }
+
+    // Clear all health points
+    const allHealthPoints = this.k.get("healthPoint");
+    for (const healthPoint of allHealthPoints) {
+      healthPoint.destroy();
+    }
+
+    // Clear all projectiles
+    const allProjectiles = this.k.get("projectile");
+    for (const projectile of allProjectiles) {
+      projectile.destroy();
+    }
+
+    // Clear all power-ups
+    const allPowerUps = this.k.get("powerUp");
+    for (const powerUp of allPowerUps) {
+      powerUp.destroy();
+    }
+
     // Restart enemy spawning with new level multipliers
     if (this.enemySpawnControllers) {
       // Cancel all existing controllers
@@ -1298,6 +1322,30 @@ export class Game {
     const allEnemies = this.k.get("enemy");
     for (const enemy of allEnemies) {
       enemy.destroy();
+    }
+
+    // Clear all XP items
+    const allXP = this.k.get("xp");
+    for (const xp of allXP) {
+      xp.destroy();
+    }
+
+    // Clear all health points
+    const allHealthPoints = this.k.get("healthPoint");
+    for (const healthPoint of allHealthPoints) {
+      healthPoint.destroy();
+    }
+
+    // Clear all projectiles
+    const allProjectiles = this.k.get("projectile");
+    for (const projectile of allProjectiles) {
+      projectile.destroy();
+    }
+
+    // Clear all power-ups
+    const allPowerUps = this.k.get("powerUp");
+    for (const powerUp of allPowerUps) {
+      powerUp.destroy();
     }
 
     // Restart enemy spawning with new level multipliers
