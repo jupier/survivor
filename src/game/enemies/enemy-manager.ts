@@ -489,127 +489,14 @@ export function setupEnemySpawning(
     }
   });
 
-  // Spawn strong enemies after 30 seconds
-  let strongController: any = null;
-  k.wait(30, () => {
-    strongController = k.loop(spawnInterval, () => {
-      if (!isPaused()) {
-        spawnEnemy(
-          k,
-          player,
-          enemySpeed,
-          enemySize,
-          true,
-          false,
-          false,
-          isPaused,
-          getSlowWeaponState,
-          undefined,
-          "strong",
-          levelMultipliers
-        );
-      }
-    });
-  });
-
-  // Spawn splitter enemies after 45 seconds (easier special enemy)
-  let splitterController: any = null;
-  k.wait(60, () => {
-    splitterController = k.loop(spawnInterval * 2, () => {
-      // Spawn half as often as normal enemies
-      if (!isPaused()) {
-        spawnEnemy(
-          k,
-          player,
-          enemySpeed,
-          enemySize,
-          false,
-          false,
-          false,
-          isPaused,
-          getSlowWeaponState,
-          undefined,
-          "splitter",
-          levelMultipliers
-        );
-      }
-    });
-  });
-
-  // Spawn exploder enemies after 60 seconds
-  let exploderController: any = null;
-  k.wait(90, () => {
-    exploderController = k.loop(spawnInterval * 2, () => {
-      // Spawn half as often as normal enemies
-      if (!isPaused()) {
-        spawnEnemy(
-          k,
-          player,
-          enemySpeed,
-          enemySize,
-          false,
-          false,
-          false,
-          isPaused,
-          getSlowWeaponState,
-          undefined,
-          "exploder",
-          levelMultipliers
-        );
-      }
-    });
-  });
-
-  // Spawn elite enemies after 90 seconds (1.5 minutes)
-  let eliteController: any = null;
-  k.wait(120, () => {
-    eliteController = k.loop(spawnInterval, () => {
-      if (!isPaused()) {
-        spawnEnemy(
-          k,
-          player,
-          enemySpeed,
-          enemySize,
-          false,
-          true,
-          false,
-          isPaused,
-          getSlowWeaponState,
-          undefined,
-          "elite",
-          levelMultipliers
-        );
-      }
-    });
-  });
-
-  // Spawn charger enemies after 120 seconds (2 minutes) - they're fast and dangerous
-  let chargerController: any = null;
-  k.wait(150, () => {
-    chargerController = k.loop(spawnInterval * 1.5, () => {
-      // Spawn slightly less often than normal enemies
-      if (!isPaused()) {
-        spawnEnemy(
-          k,
-          player,
-          enemySpeed,
-          enemySize,
-          false,
-          false,
-          false,
-          isPaused,
-          getSlowWeaponState,
-          undefined,
-          "charger",
-          levelMultipliers
-        );
-      }
-    });
-  });
-
-  // Swarm enemies will be started from the game loop based on game time elapsed
-  // (handled in game.ts setupGameLoop)
-  const swarmController: any = null; // Will be set in game loop
+  // All other enemy types will be started from the game loop based on game time elapsed
+  // (handled in game.ts setupGameLoop to sync with the game timer)
+  const strongController: any = null; // Will be set in game loop at 30s elapsed
+  const splitterController: any = null; // Will be set in game loop at 60s elapsed
+  const exploderController: any = null; // Will be set in game loop at 90s elapsed
+  const eliteController: any = null; // Will be set in game loop at 120s elapsed
+  const chargerController: any = null; // Will be set in game loop at 150s elapsed
+  const swarmController: any = null; // Will be set in game loop at 90s elapsed
 
   return {
     normalController,

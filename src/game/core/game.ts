@@ -83,6 +83,7 @@ export class Game {
   private enemySpeed = 45; // pixels per second (reduced for better playability)
   private enemySize = 24; // size of enemy sprite (24x24, scaled down from 32)
   private currentLevelConfig!: LevelConfig;
+  private initialGameTime: number = 600; // Track initial game time for current level
 
   private getLevelMultipliers() {
     return {
@@ -103,6 +104,7 @@ export class Game {
 
     // Initialize level config
     this.currentLevelConfig = getLevelConfig(this.state.currentLevel);
+    this.initialGameTime = this.currentLevelConfig.gameTime;
 
     // Create background
     createBackground(this.k, this.state.currentLevel);
@@ -640,41 +642,203 @@ export class Game {
         }
 
         // Increase enemy spawn rate every 15 seconds
-        const gameTimeElapsed = 600 - this.state.gameTime;
+        const gameTimeElapsed = this.initialGameTime - this.state.gameTime;
         const spawnRateIncreaseInterval = 15;
 
-        // Start swarm enemy spawning after 90 seconds
-        if (
-          gameTimeElapsed >= 90 &&
-          this.enemySpawnControllers &&
-          !this.enemySpawnControllers.swarmController
-        ) {
-          const swarmSpawnInterval = this.state.enemySpawnInterval / 2; // Double the spawn rate
-          this.enemySpawnControllers.swarmController = this.k.loop(
-            swarmSpawnInterval,
-            () => {
-              if (!this.state.isPaused) {
-                spawnEnemy(
-                  this.k,
-                  this.player,
-                  this.enemySpeed,
-                  this.enemySize,
-                  false,
-                  false,
-                  true,
-                  () => this.state.isPaused,
-                  () => ({
-                    active: this.state.slowWeaponActive,
-                    effectPercentage: this.state.slowEffectPercentage,
-                    zoneRadius: this.state.targetingZoneRadius,
-                  }),
-                  undefined,
-                  undefined,
-                  this.getLevelMultipliers()
-                );
+        // Start enemy types based on game time elapsed (synced with game timer)
+        if (this.enemySpawnControllers) {
+          // Start strong enemies after 30 seconds (gameTime = 570)
+          if (
+            gameTimeElapsed >= 30 &&
+            !this.enemySpawnControllers.strongController
+          ) {
+            this.enemySpawnControllers.strongController = this.k.loop(
+              this.state.enemySpawnInterval,
+              () => {
+                if (!this.state.isPaused) {
+                  spawnEnemy(
+                    this.k,
+                    this.player,
+                    this.enemySpeed,
+                    this.enemySize,
+                    true,
+                    false,
+                    false,
+                    () => this.state.isPaused,
+                    () => ({
+                      active: this.state.slowWeaponActive,
+                      effectPercentage: this.state.slowEffectPercentage,
+                      zoneRadius: this.state.targetingZoneRadius,
+                    }),
+                    undefined,
+                    "strong",
+                    this.getLevelMultipliers()
+                  );
+                }
               }
-            }
-          );
+            );
+          }
+
+          // Start splitter enemies after 60 seconds (gameTime = 540)
+          if (
+            gameTimeElapsed >= 60 &&
+            !this.enemySpawnControllers.splitterController
+          ) {
+            this.enemySpawnControllers.splitterController = this.k.loop(
+              this.state.enemySpawnInterval * 2,
+              () => {
+                if (!this.state.isPaused) {
+                  spawnEnemy(
+                    this.k,
+                    this.player,
+                    this.enemySpeed,
+                    this.enemySize,
+                    false,
+                    false,
+                    false,
+                    () => this.state.isPaused,
+                    () => ({
+                      active: this.state.slowWeaponActive,
+                      effectPercentage: this.state.slowEffectPercentage,
+                      zoneRadius: this.state.targetingZoneRadius,
+                    }),
+                    undefined,
+                    "splitter",
+                    this.getLevelMultipliers()
+                  );
+                }
+              }
+            );
+          }
+
+          // Start exploder enemies after 90 seconds (gameTime = 510)
+          if (
+            gameTimeElapsed >= 90 &&
+            !this.enemySpawnControllers.exploderController
+          ) {
+            this.enemySpawnControllers.exploderController = this.k.loop(
+              this.state.enemySpawnInterval * 2,
+              () => {
+                if (!this.state.isPaused) {
+                  spawnEnemy(
+                    this.k,
+                    this.player,
+                    this.enemySpeed,
+                    this.enemySize,
+                    false,
+                    false,
+                    false,
+                    () => this.state.isPaused,
+                    () => ({
+                      active: this.state.slowWeaponActive,
+                      effectPercentage: this.state.slowEffectPercentage,
+                      zoneRadius: this.state.targetingZoneRadius,
+                    }),
+                    undefined,
+                    "exploder",
+                    this.getLevelMultipliers()
+                  );
+                }
+              }
+            );
+          }
+
+          // Start swarm enemy spawning after 90 seconds (gameTime = 510)
+          if (
+            gameTimeElapsed >= 90 &&
+            !this.enemySpawnControllers.swarmController
+          ) {
+            const swarmSpawnInterval = this.state.enemySpawnInterval / 2; // Double the spawn rate
+            this.enemySpawnControllers.swarmController = this.k.loop(
+              swarmSpawnInterval,
+              () => {
+                if (!this.state.isPaused) {
+                  spawnEnemy(
+                    this.k,
+                    this.player,
+                    this.enemySpeed,
+                    this.enemySize,
+                    false,
+                    false,
+                    true,
+                    () => this.state.isPaused,
+                    () => ({
+                      active: this.state.slowWeaponActive,
+                      effectPercentage: this.state.slowEffectPercentage,
+                      zoneRadius: this.state.targetingZoneRadius,
+                    }),
+                    undefined,
+                    undefined,
+                    this.getLevelMultipliers()
+                  );
+                }
+              }
+            );
+          }
+
+          // Start elite enemies after 120 seconds (gameTime = 480)
+          if (
+            gameTimeElapsed >= 120 &&
+            !this.enemySpawnControllers.eliteController
+          ) {
+            this.enemySpawnControllers.eliteController = this.k.loop(
+              this.state.enemySpawnInterval,
+              () => {
+                if (!this.state.isPaused) {
+                  spawnEnemy(
+                    this.k,
+                    this.player,
+                    this.enemySpeed,
+                    this.enemySize,
+                    false,
+                    true,
+                    false,
+                    () => this.state.isPaused,
+                    () => ({
+                      active: this.state.slowWeaponActive,
+                      effectPercentage: this.state.slowEffectPercentage,
+                      zoneRadius: this.state.targetingZoneRadius,
+                    }),
+                    undefined,
+                    "elite",
+                    this.getLevelMultipliers()
+                  );
+                }
+              }
+            );
+          }
+
+          // Start charger enemies after 150 seconds (gameTime = 450)
+          if (
+            gameTimeElapsed >= 150 &&
+            !this.enemySpawnControllers.chargerController
+          ) {
+            this.enemySpawnControllers.chargerController = this.k.loop(
+              this.state.enemySpawnInterval * 1.5,
+              () => {
+                if (!this.state.isPaused) {
+                  spawnEnemy(
+                    this.k,
+                    this.player,
+                    this.enemySpeed,
+                    this.enemySize,
+                    false,
+                    false,
+                    false,
+                    () => this.state.isPaused,
+                    () => ({
+                      active: this.state.slowWeaponActive,
+                      effectPercentage: this.state.slowEffectPercentage,
+                      zoneRadius: this.state.targetingZoneRadius,
+                    }),
+                    undefined,
+                    "charger",
+                    this.getLevelMultipliers()
+                  );
+                }
+              }
+            );
+          }
         }
 
         if (
@@ -1120,6 +1284,7 @@ export class Game {
 
     // Reset game time for new level
     this.state.gameTime = nextLevelConfig.gameTime;
+    this.initialGameTime = nextLevelConfig.gameTime;
     (this as any).lastBossSpawnTime = 0;
     this.state.lastSpawnRateIncrease = 0;
 
@@ -1360,6 +1525,7 @@ export class Game {
     this.isTransitioning = true;
     this.state.currentLevel = levelNumber;
     this.currentLevelConfig = getLevelConfig(levelNumber);
+    this.initialGameTime = this.currentLevelConfig.gameTime;
 
     // Reset game time for new level
     this.state.gameTime = this.currentLevelConfig.gameTime;
