@@ -508,3 +508,57 @@ export function updatePowerUpDisplay(
     }
   }
 }
+
+export function hideUI(ui: UIElements): void {
+  // Hide all UI elements by setting opacity to 0
+  const elements = [
+    ui.levelText,
+    ui.timerText,
+    ui.killsText,
+    ui.expBar,
+    ui.expCounterText,
+    ui.lifeBar,
+    ui.healthCounterText,
+    ui.speedStatText,
+    ui.projectileStatText,
+    ui.zoneStatText,
+    ui.fireRateStatText,
+    ui.fpsText,
+    ui.playerLevelText,
+    ui.slowWeaponText,
+    ui.aoeWeaponText,
+    ui.versionText,
+  ];
+  elements.forEach((element) => {
+    if (element) {
+      element.opacity = 0;
+    }
+  });
+}
+
+export function showUI(ui: UIElements): void {
+  // Show all UI elements by setting opacity to 1
+  const elements = [
+    ui.levelText,
+    ui.timerText,
+    ui.killsText,
+    ui.expBar,
+    ui.expCounterText,
+    ui.lifeBar,
+    ui.healthCounterText,
+    ui.speedStatText,
+    ui.projectileStatText,
+    ui.zoneStatText,
+    ui.fireRateStatText,
+    ui.fpsText,
+    ui.playerLevelText,
+    ui.slowWeaponText,
+    ui.aoeWeaponText,
+    ui.versionText,
+  ];
+  elements.forEach((element) => {
+    if (element) {
+      element.opacity = 1;
+    }
+  });
+}

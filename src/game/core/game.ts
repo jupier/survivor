@@ -5,6 +5,8 @@ import {
   createUI,
   updateUI,
   updatePowerUpDisplay,
+  hideUI,
+  showUI,
   UIElements,
 } from "../ui/ui-manager";
 import {
@@ -34,6 +36,7 @@ import {
   hideAdminMenu,
   updateAllButtonTexts,
 } from "../menu/admin-menu-manager";
+import { showHomeScreen, hideHomeScreen } from "../menu/home-screen";
 
 export class Game {
   private k: ReturnType<typeof kaplay>;
@@ -60,6 +63,7 @@ export class Game {
   private sounds!: SoundManager;
   private isTransitioning: boolean = false;
   private isAdminMenuOpen: boolean = false;
+  private gameStarted: boolean = false;
 
   constructor(container: HTMLElement) {
     const width = Math.min(window.innerWidth, 1200);
@@ -103,12 +107,14 @@ export class Game {
     // Create background
     createBackground(this.k, this.state.currentLevel);
 
-    // Create player
+    // Create player (initially hidden, will be shown when game starts)
     const playerData = createPlayer(this.k);
     this.player = playerData.player;
+    this.player.opacity = 0;
 
-    // Create UI
+    // Create UI (initially hidden, will be shown when game starts)
     this.ui = createUI(this.k);
+    hideUI(this.ui);
 
     // Setup player movement
     setupPlayerMovement(
@@ -255,11 +261,46 @@ export class Game {
       }
     });
 
-    // Main game loop
+    // Main game loop (will be started when user clicks start)
     this.setupGameLoop();
+
+    // Show home screen instead of starting immediately
+    this.showHomeScreen();
 
     // Spawn enemies of each type for testing
     // this.spawnManyEnemies(50);
+  }
+
+  private async showHomeScreen(): Promise<void> {
+    // Pause the game initially
+    this.state.isPaused = true;
+
+    await showHomeScreen(this.k, {
+      onStart: () => {
+        console.log("onStart callback invoked in Game class");
+        this.startGame();
+      },
+    });
+  }
+
+  private startGame(): void {
+    console.log("startGame() called");
+    // Hide home screen
+    hideHomeScreen(this.k);
+
+    // Show UI and player
+    showUI(this.ui);
+    this.player.opacity = 1;
+
+    // Start the game
+    this.gameStarted = true;
+    this.state.isPaused = false;
+    console.log(
+      "Game started, gameStarted:",
+      this.gameStarted,
+      "isPaused:",
+      this.state.isPaused
+    );
   }
 
   // Unused test function - kept for potential future testing
@@ -573,6 +614,11 @@ export class Game {
 
   private setupGameLoop(): void {
     this.k.onUpdate(() => {
+      // Skip updates if game hasn't started yet
+      if (!this.gameStarted) {
+        return;
+      }
+
       // Skip updates if game is paused (but allow admin menu to stay open)
       if (this.state.isPaused && !this.isAdminMenuOpen) {
         return;
