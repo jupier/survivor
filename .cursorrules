@@ -1,0 +1,43 @@
+# Cursor AI Rules for Survivor Game
+
+## Version Management
+
+When making significant changes or pushing code:
+
+- **Always bump the version** in `package.json` before committing changes
+- Use semantic versioning:
+  - **Patch** (0.1.0 → 0.1.1): Bug fixes, small improvements
+  - **Minor** (0.1.0 → 0.2.0): New features, non-breaking changes
+  - **Major** (0.1.0 → 1.0.0): Breaking changes, major refactoring
+- The version is automatically synced to `src/version.ts` via vite plugin
+- Version is displayed in the game UI (bottom right corner)
+
+## Automatic Version Bumping
+
+The project has a pre-push git hook that automatically bumps the patch version when pushing. However, you should still manually bump versions for:
+
+- Significant feature additions (use minor bump)
+- Breaking changes (use major bump)
+- When explicitly requested by the user
+
+## Code Organization
+
+- All game code is organized by feature in `src/game/`:
+  - `core/` - Core game logic
+  - `enemies/` - Enemy management
+  - `player/` - Player logic
+  - `menu/` - Menu systems
+  - `weapons/` - Weapon systems
+  - `pickups/` - Pickup items
+  - `ui/` - UI components
+  - `translation/` - Translation system
+  - `assets/` - Asset loading
+  - `sound/` - Sound management
+
+## Best Practices
+
+- Keep imports organized by feature
+- Use TypeScript strict mode
+- Follow existing code patterns
+- Update translations when adding new UI text
+- Test changes before committing

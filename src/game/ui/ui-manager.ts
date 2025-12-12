@@ -2,6 +2,7 @@ import { GameState } from "../core/game-state";
 import { PowerUpState, PowerUpType } from "../pickups/powerup-manager";
 import { Z_INDEX } from "../assets/z-index";
 import { t } from "../translation/translations";
+import { VERSION } from "../../version";
 
 export interface UIElements {
   levelText: any;
@@ -22,6 +23,7 @@ export interface UIElements {
   lowHealthBorder: any[];
   powerUpContainer: any;
   powerUpTexts: Map<PowerUpType, any>;
+  versionText: any;
 }
 
 export function createUI(
@@ -250,6 +252,16 @@ export function createUI(
     k.z(Z_INDEX.UI_STATS),
   ]);
 
+  // Version display (bottom right)
+  const versionText = k.add([
+    k.text(`v${VERSION}`, { size: 12 }),
+    k.color(150, 150, 150), // Gray color
+    k.pos(k.width() - uiPadding, k.height() - uiPadding),
+    k.anchor("botright"),
+    k.fixed(),
+    k.z(Z_INDEX.UI_STATS),
+  ]);
+
   // Power-up display will be created dynamically
   // Store the starting Y position for power-up display
   const powerUpStartY = currentY + 10;
@@ -333,6 +345,7 @@ export function createUI(
     lowHealthBorder,
     powerUpContainer: { pos: { x: uiPadding, y: powerUpStartY } },
     powerUpTexts: new Map(),
+    versionText,
   };
 }
 
