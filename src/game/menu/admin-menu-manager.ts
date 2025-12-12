@@ -1,6 +1,6 @@
-import { GameState } from "./game-state";
-import { Z_INDEX } from "./z-index";
-import { LEVEL_CONFIGS } from "./level-config";
+import { GameState } from "../core/game-state";
+import { Z_INDEX } from "../assets/z-index";
+import { LEVEL_CONFIGS } from "../core/level-config";
 
 export interface AdminMenuCallbacks {
   onUpgrade: (upgradeType: string, value?: number) => void;

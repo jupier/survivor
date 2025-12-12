@@ -1,4 +1,4 @@
-import { PowerUpState, createPowerUpState } from "./powerup-manager";
+import { PowerUpState, createPowerUpState } from "../pickups/powerup-manager";
 
 export interface GameState {
   // Player stats

@@ -1,10 +1,10 @@
-import { Z_INDEX } from "./z-index";
+import { Z_INDEX } from "../assets/z-index";
 import {
   t,
   setLanguage,
   getLanguage,
   getAvailableLanguages,
-} from "./translations";
+} from "../translation/translations";
 
 export interface PauseMenuCallbacks {
   onLanguageChange?: () => void;

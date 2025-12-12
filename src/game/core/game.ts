@@ -1,35 +1,39 @@
 import kaplay from "kaplay";
 import { GameState, createInitialGameState } from "./game-state";
-import { loadAllSprites, createBackground } from "./sprite-loader";
+import { loadAllSprites, createBackground } from "../assets/sprite-loader";
 import {
   createUI,
   updateUI,
   updatePowerUpDisplay,
   UIElements,
-} from "./ui-manager";
+} from "../ui/ui-manager";
 import {
   createPlayer,
   setupPlayerMovement,
   setupPlayerCollisions,
-} from "./player-manager";
-import { setupEnemySpawning, spawnEnemy } from "./enemy-manager";
-import { autoFireAtClosestEnemy } from "./projectile-manager";
-import { setupAOEWeapon } from "./aoe-weapon-manager";
-import { showLevelUpMenu } from "./level-up-manager";
-import { showPauseMenu, hidePauseMenu, showDeathScreen } from "./menu-manager";
-import { spawnXP, spawnHealthPoint } from "./pickup-manager";
-import { loadSounds, SoundManager } from "./sound-manager";
-import { showDamageNumber } from "./damage-numbers";
-import { spawnPowerUp, updatePowerUps } from "./powerup-manager";
-import { spawnBoss } from "./enemy-manager";
+} from "../player/player-manager";
+import { setupEnemySpawning, spawnEnemy } from "../enemies/enemy-manager";
+import { autoFireAtClosestEnemy } from "../weapons/projectile-manager";
+import { setupAOEWeapon } from "../weapons/aoe-weapon-manager";
+import { showLevelUpMenu } from "../menu/level-up-manager";
+import {
+  showPauseMenu,
+  hidePauseMenu,
+  showDeathScreen,
+} from "../menu/menu-manager";
+import { spawnXP, spawnHealthPoint } from "../pickups/pickup-manager";
+import { loadSounds, SoundManager } from "../sound/sound-manager";
+import { showDamageNumber } from "../ui/damage-numbers";
+import { spawnPowerUp, updatePowerUps } from "../pickups/powerup-manager";
+import { spawnBoss } from "../enemies/enemy-manager";
 import { getLevelConfig, LevelConfig } from "./level-config";
-import { t } from "./translations";
-import { Z_INDEX } from "./z-index";
+import { t } from "../translation/translations";
+import { Z_INDEX } from "../assets/z-index";
 import {
   showAdminMenu,
   hideAdminMenu,
   updateAllButtonTexts,
-} from "./admin-menu-manager";
+} from "../menu/admin-menu-manager";
 
 export class Game {
   private k: ReturnType<typeof kaplay>;

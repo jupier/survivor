@@ -1,5 +1,5 @@
-import { Z_INDEX } from "./z-index";
-import { t } from "./translations";
+import { Z_INDEX } from "../assets/z-index";
+import { t } from "../translation/translations";
 
 // Helper function to randomly select N items from an array
 function randomSelect<T>(array: T[], count: number): T[] {

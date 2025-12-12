@@ -1,7 +1,7 @@
-import { GameState } from "./game-state";
-import { PowerUpState, PowerUpType } from "./powerup-manager";
-import { Z_INDEX } from "./z-index";
-import { t } from "./translations";
+import { GameState } from "../core/game-state";
+import { PowerUpState, PowerUpType } from "../pickups/powerup-manager";
+import { Z_INDEX } from "../assets/z-index";
+import { t } from "../translation/translations";
 
 export interface UIElements {
   levelText: any;

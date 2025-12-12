@@ -1,4 +1,4 @@
-import { Z_INDEX } from "./z-index";
+import { Z_INDEX } from "../assets/z-index";
 
 export function showDamageNumber(
   k: ReturnType<typeof import("kaplay").default>,

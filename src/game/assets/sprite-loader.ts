@@ -1,4 +1,4 @@
-import { createPlayerSprite } from "../assets/create-player-sprite";
+import { createPlayerSprite } from "../../assets/create-player-sprite";
 import {
   createNormalEnemySprite,
   createStrongEnemySprite,
@@ -8,20 +8,20 @@ import {
   createSplitterEnemySprite,
   createExploderEnemySprite,
   createBossEnemySprite,
-} from "../assets/create-enemy-sprites";
-import { createBackgroundPattern } from "../assets/create-background-sprite";
-import { getLevelConfig } from "./level-config";
+} from "../../assets/create-enemy-sprites";
+import { createBackgroundPattern } from "../../assets/create-background-sprite";
+import { getLevelConfig } from "../core/level-config";
 import { Z_INDEX } from "./z-index";
-import { createXPSprite } from "../assets/create-xp-sprite";
-import { createHealthSprite } from "../assets/create-health-sprite";
-import { createProjectileSprite } from "../assets/create-projectile-sprite";
-import { createTargetingZoneSprite } from "../assets/create-targeting-zone-sprite";
+import { createXPSprite } from "../../assets/create-xp-sprite";
+import { createHealthSprite } from "../../assets/create-health-sprite";
+import { createProjectileSprite } from "../../assets/create-projectile-sprite";
+import { createTargetingZoneSprite } from "../../assets/create-targeting-zone-sprite";
 import {
   createSpeedPowerUpSprite,
   createMagnetPowerUpSprite,
   createInvincibilityPowerUpSprite,
   createDamagePowerUpSprite,
-} from "../assets/create-powerup-sprites";
+} from "../../assets/create-powerup-sprites";
 
 export async function loadAllSprites(
   k: ReturnType<typeof import("kaplay").default>

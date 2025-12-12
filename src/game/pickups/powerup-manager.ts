@@ -1,6 +1,6 @@
 export type PowerUpType = "speed" | "magnet" | "invincibility" | "damage";
 
-import { Z_INDEX } from "./z-index";
+import { Z_INDEX } from "../assets/z-index";
 
 export function spawnPowerUp(
   k: ReturnType<typeof import("kaplay").default>,

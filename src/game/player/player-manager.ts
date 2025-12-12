@@ -1,5 +1,5 @@
-import { activatePowerUp, PowerUpState } from "./powerup-manager";
-import { Z_INDEX } from "./z-index";
+import { activatePowerUp, PowerUpState } from "../pickups/powerup-manager";
+import { Z_INDEX } from "../assets/z-index";
 
 export function createPlayer(k: ReturnType<typeof import("kaplay").default>): {
   player: any;

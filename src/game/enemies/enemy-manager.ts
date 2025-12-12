@@ -1,4 +1,4 @@
-import { Z_INDEX } from "./z-index";
+import { Z_INDEX } from "../assets/z-index";
 
 export type EnemyType =
   | "normal"
