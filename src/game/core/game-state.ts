@@ -6,6 +6,7 @@ export interface GameState {
   fireInterval: number;
   projectileCount: number;
   targetingZoneRadius: number;
+  xpAttractRadius: number;
 
   // Slow weapon (slows enemies in targeting zone)
   slowWeaponActive: boolean;
@@ -44,6 +45,7 @@ export function createInitialGameState(): GameState {
     fireInterval: 1,
     projectileCount: 1,
     targetingZoneRadius: 100,
+    xpAttractRadius: 0,
     slowWeaponActive: false,
     slowEffectPercentage: 15, // 15% speed reduction by default (reduced from 30%)
     aoeWeaponActive: false,

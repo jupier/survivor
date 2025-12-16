@@ -17,6 +17,9 @@ export interface UIElements {
   zoneStatText: any;
   fireRateStatText: any;
   fpsText: any;
+  enemyCountText: any;
+  enemiesInRangeText: any;
+  debugCountsText: any;
   playerLevelText: any;
   slowWeaponText: any;
   aoeWeaponText: any;
@@ -252,6 +255,36 @@ export function createUI(
     k.z(Z_INDEX.UI_STATS),
   ]);
 
+  // Enemy count (below FPS)
+  const enemyCountText = k.add([
+    k.text("Enemies: 0", { size: 16 }),
+    k.color(255, 150, 150), // Light red color
+    k.pos(uiPadding, k.height() - uiPadding - 25),
+    k.anchor("botleft"),
+    k.fixed(),
+    k.z(Z_INDEX.UI_STATS),
+  ]);
+
+  // Enemies in range (below enemy count)
+  const enemiesInRangeText = k.add([
+    k.text("In range: 0", { size: 16 }),
+    k.color(255, 220, 150), // Light orange color
+    k.pos(uiPadding, k.height() - uiPadding - 50),
+    k.anchor("botleft"),
+    k.fixed(),
+    k.z(Z_INDEX.UI_STATS),
+  ]);
+
+  // Debug counts (below in-range)
+  const debugCountsText = k.add([
+    k.text("proj: 0  pu: 0  hp: 0  dmg: 0", { size: 14 }),
+    k.color(200, 200, 200), // Light gray
+    k.pos(uiPadding, k.height() - uiPadding - 75),
+    k.anchor("botleft"),
+    k.fixed(),
+    k.z(Z_INDEX.UI_STATS),
+  ]);
+
   // Version display (bottom right)
   const versionText = k.add([
     k.text(`v${VERSION}`, { size: 12 }),
@@ -339,6 +372,9 @@ export function createUI(
     zoneStatText,
     fireRateStatText,
     fpsText,
+    enemyCountText,
+    enemiesInRangeText,
+    debugCountsText,
     playerLevelText,
     slowWeaponText,
     aoeWeaponText,
@@ -524,6 +560,9 @@ export function hideUI(ui: UIElements): void {
     ui.zoneStatText,
     ui.fireRateStatText,
     ui.fpsText,
+    ui.enemyCountText,
+    ui.enemiesInRangeText,
+    ui.debugCountsText,
     ui.playerLevelText,
     ui.slowWeaponText,
     ui.aoeWeaponText,
@@ -551,6 +590,9 @@ export function showUI(ui: UIElements): void {
     ui.zoneStatText,
     ui.fireRateStatText,
     ui.fpsText,
+    ui.enemyCountText,
+    ui.enemiesInRangeText,
+    ui.debugCountsText,
     ui.playerLevelText,
     ui.slowWeaponText,
     ui.aoeWeaponText,

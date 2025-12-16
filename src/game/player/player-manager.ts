@@ -153,6 +153,7 @@ export function setupPlayerCollisions(
     playerLevel: number;
     enemiesKilled: number;
     isPaused: boolean;
+    xpAttractRadius: number;
   },
   callbacks: {
     onHealthChange: (newHealth: number) => void;
@@ -283,41 +284,57 @@ export function setupPlayerCollisions(
 
       powerUp.destroy();
     });
+  }
 
-    // Magnet effect: attract XP and health points
-    k.onUpdate(() => {
-      if (powerUps.magnet.active) {
-        const magnetRadius = 150;
-        const magnetSpeed = 200;
+  // Passive XP attraction (upgradeable) + Magnet power-up boosts it
+  k.onUpdate(() => {
+    if (state.isPaused) {
+      return;
+    }
 
-        // Attract XP
-        const xpPoints = k.get("xp");
-        for (const xp of xpPoints) {
-          const dx = player.pos.x - xp.pos.x;
-          const dy = player.pos.y - xp.pos.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < magnetRadius && dist > 0) {
-            const moveX = (dx / dist) * magnetSpeed * k.dt();
-            const moveY = (dy / dist) * magnetSpeed * k.dt();
-            xp.pos.x += moveX;
-            xp.pos.y += moveY;
-          }
-        }
+    const magnetActive = !!powerUps?.magnet.active;
 
-        // Attract health points
-        const healthPoints = k.get("healthPoint");
-        for (const hp of healthPoints) {
-          const dx = player.pos.x - hp.pos.x;
-          const dy = player.pos.y - hp.pos.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < magnetRadius && dist > 0) {
-            const moveX = (dx / dist) * magnetSpeed * k.dt();
-            const moveY = (dy / dist) * magnetSpeed * k.dt();
-            hp.pos.x += moveX;
-            hp.pos.y += moveY;
-          }
+    const baseRadius = Math.max(0, state.xpAttractRadius ?? 0);
+    const baseSpeed = 120;
+
+    const magnetRadius = 150;
+    const magnetSpeed = 200;
+
+    const xpRadius = magnetActive
+      ? Math.max(baseRadius, magnetRadius)
+      : baseRadius;
+    const xpSpeed = magnetActive ? magnetSpeed : baseSpeed;
+
+    // Attract XP (passive if radius > 0)
+    if (xpRadius > 0) {
+      const xpPoints = k.get("xp");
+      for (const xp of xpPoints) {
+        const dx = player.pos.x - xp.pos.x;
+        const dy = player.pos.y - xp.pos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < xpRadius && dist > 0) {
+          const moveX = (dx / dist) * xpSpeed * k.dt();
+          const moveY = (dy / dist) * xpSpeed * k.dt();
+          xp.pos.x += moveX;
+          xp.pos.y += moveY;
         }
       }
-    });
-  }
+    }
+
+    // Keep health attraction as a magnet power-up perk only
+    if (magnetActive) {
+      const healthPoints = k.get("healthPoint");
+      for (const hp of healthPoints) {
+        const dx = player.pos.x - hp.pos.x;
+        const dy = player.pos.y - hp.pos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < magnetRadius && dist > 0) {
+          const moveX = (dx / dist) * magnetSpeed * k.dt();
+          const moveY = (dy / dist) * magnetSpeed * k.dt();
+          hp.pos.x += moveX;
+          hp.pos.y += moveY;
+        }
+      }
+    }
+  });
 }

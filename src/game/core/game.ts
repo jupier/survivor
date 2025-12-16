@@ -38,6 +38,13 @@ import {
 } from "../menu/admin-menu-manager";
 import { showHomeScreen, hideHomeScreen } from "../menu/home-screen";
 
+const TARGETING_ZONE_UPGRADE_MULTIPLIER = 1.1; // was 1.3 (30%)
+const TARGETING_ZONE_MAX_RADIUS = 225;
+const XP_ATTRACT_UPGRADE_MULTIPLIER = 1.25;
+const XP_ATTRACT_MAX_RADIUS = 200; // always smaller than targeting zone max
+const XP_ATTRACT_MAX_FRACTION_OF_TARGETING = 0.8; // keep attraction smaller than targeting zone
+const XP_ATTRACT_FIRST_RADIUS = 50;
+
 export class Game {
   private k: ReturnType<typeof kaplay>;
   private state: GameState;
@@ -387,6 +394,7 @@ export class Game {
       const currentRadius = this.state.targetingZoneRadius;
       const currentAOEActive = this.state.aoeWeaponActive;
       const currentSlowActive = this.state.slowWeaponActive;
+      const radiusChanged = currentRadius !== lastRadius;
 
       // Always update positions (player moves every frame)
       this.targetingZone.pos.x = currentX;
@@ -399,17 +407,16 @@ export class Game {
       this.aoeZoneOverlay.pos.y = currentY;
 
       // Only update scale if radius changed
-      if (currentRadius !== lastRadius) {
+      if (radiusChanged) {
         const newScale = (currentRadius * 2) / baseSpriteSize;
         this.targetingZone.scale = this.k.vec2(newScale, newScale);
-        lastRadius = currentRadius;
       }
 
       // Update overlay visibility and radius if weapon states or radius changed
       if (
         currentAOEActive !== lastAOEActive ||
         currentSlowActive !== lastSlowActive ||
-        currentRadius !== lastRadius
+        radiusChanged
       ) {
         // Update targeting zone - always transparent (no white line)
         this.targetingZone.opacity = 0;
@@ -441,7 +448,7 @@ export class Game {
         lastSlowActive = currentSlowActive;
       } else {
         // Even if states haven't changed, update radius if it changed (for active overlays)
-        if (currentRadius !== lastRadius) {
+        if (radiusChanged) {
           if (currentAOEActive) {
             this.aoeZoneOverlay.radius = currentRadius;
           }
@@ -450,7 +457,42 @@ export class Game {
           }
         }
       }
+
+      if (radiusChanged) {
+        lastRadius = currentRadius;
+      }
     });
+  }
+
+  private applyTargetingZoneUpgrade(): void {
+    const upgraded = Math.round(
+      this.state.targetingZoneRadius * TARGETING_ZONE_UPGRADE_MULTIPLIER
+    );
+    this.state.targetingZoneRadius = Math.min(
+      upgraded,
+      TARGETING_ZONE_MAX_RADIUS
+    );
+  }
+
+  private applyXPAttractUpgrade(): void {
+    const upgraded =
+      this.state.xpAttractRadius <= 0
+        ? XP_ATTRACT_FIRST_RADIUS
+        : Math.round(
+            this.state.xpAttractRadius * XP_ATTRACT_UPGRADE_MULTIPLIER
+          );
+
+    const maxAllowed = Math.max(
+      0,
+      Math.min(
+        XP_ATTRACT_MAX_RADIUS,
+        Math.floor(
+          this.state.targetingZoneRadius * XP_ATTRACT_MAX_FRACTION_OF_TARGETING
+        )
+      )
+    );
+
+    this.state.xpAttractRadius = Math.min(upgraded, maxAllowed);
   }
 
   private setupAutoFire(): void {
@@ -679,9 +721,9 @@ export class Game {
             );
           }
 
-          // Start splitter enemies after 60 seconds (gameTime = 540)
+          // Start splitter enemies after 45 seconds (earlier for more challenge)
           if (
-            gameTimeElapsed >= 60 &&
+            gameTimeElapsed >= 45 &&
             !this.enemySpawnControllers.splitterController
           ) {
             this.enemySpawnControllers.splitterController = this.k.loop(
@@ -1123,6 +1165,40 @@ export class Game {
               if (this.ui && this.ui.fpsText) {
                 this.ui.fpsText.text = `${t().ui.fps}: ${fps}`;
               }
+              // Update enemy count
+              const enemies = this.k.get("enemy");
+              const enemyCount = enemies.length;
+              if (this.ui && this.ui.enemyCountText) {
+                this.ui.enemyCountText.text = `Enemies: ${enemyCount}`;
+              }
+
+              // Update enemies-in-range count (targets inside the AOE/targeting radius)
+              const px = this.player?.pos?.x ?? 0;
+              const py = this.player?.pos?.y ?? 0;
+              const r = this.state.targetingZoneRadius;
+              const r2 = r * r;
+              let inRangeCount = 0;
+              for (const e of enemies) {
+                const dx = e.pos.x - px;
+                const dy = e.pos.y - py;
+                if (dx * dx + dy * dy <= r2) {
+                  inRangeCount++;
+                }
+              }
+              if (this.ui && this.ui.enemiesInRangeText) {
+                this.ui.enemiesInRangeText.text = `In range: ${inRangeCount}`;
+              }
+
+              // Debug counts to spot which object type grows over time
+              if (this.ui && this.ui.debugCountsText) {
+                const projectileCount = this.k.get("projectile").length;
+                const powerUpCount = this.k.get("powerUp").length;
+                const healthPointCount = this.k.get("healthPoint").length;
+                const damageNumberCount = this.k.get("damageNumber").length;
+                this.ui.debugCountsText.text =
+                  `proj: ${projectileCount}  pu: ${powerUpCount}  ` +
+                  `hp: ${healthPointCount}  dmg: ${damageNumberCount}`;
+              }
             }
           }
           (this as any).fpsFrameCount = 0;
@@ -1171,9 +1247,7 @@ export class Game {
           this.state.speed = Math.round(this.state.speed * 1.2); // 20% faster
         } else if (option === "targetingZone") {
           // Increase targeting zone radius
-          this.state.targetingZoneRadius = Math.round(
-            this.state.targetingZoneRadius * 1.3
-          ); // 30% larger
+          this.applyTargetingZoneUpgrade();
         } else if (option === "slowWeapon") {
           // Activate slow weapon
           this.state.slowWeaponActive = true;
@@ -1189,6 +1263,9 @@ export class Game {
           // Increase max health and restore current health
           this.state.maxHealth += 1;
           this.state.playerHealth += 1; // Also restore health when increasing max
+        } else if (option === "xpMagnet") {
+          // Passive XP attraction radius
+          this.applyXPAttractUpgrade();
         } else if (option === "aoeWeapon") {
           // Activate AOE weapon
           this.state.aoeWeaponActive = true;
@@ -1443,9 +1520,7 @@ export class Game {
       } else if (upgradeType === "projectileCount") {
         this.state.projectileCount += 1;
       } else if (upgradeType === "targetingZone") {
-        this.state.targetingZoneRadius = Math.round(
-          this.state.targetingZoneRadius * 1.3
-        ); // 30% larger
+        this.applyTargetingZoneUpgrade();
         // Update targeting zone visual
         if (this.targetingZone && this.targetingZone.exists()) {
           const baseSpriteSize = 300;

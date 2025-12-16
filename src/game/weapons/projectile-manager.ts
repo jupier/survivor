@@ -87,6 +87,7 @@ export function fireProjectile(
     k.area({
       collisionIgnore: ["xp", "healthPoint", "projectile"],
     }),
+    k.offscreen({ destroy: true }),
     k.scale(0.75, 0.75), // Scale down to 75% (12px instead of 16px)
     k.rotate(angle), // Rotate projectile to face direction
     "projectile",

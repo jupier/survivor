@@ -33,7 +33,7 @@
         },
         "targetingZone": {
           "title": "Increase Targeting Range",
-          "description": "Target enemies 30% farther away"
+          "description": "Target enemies 15% farther away (max 250)"
         },
         "slowWeapon": {
           "title": "Activate Slow Weapon",
@@ -54,6 +54,10 @@
         "increaseHealth": {
           "title": "Increase Max Health",
           "description": "Max health +1 and restore health"
+        },
+        "xpMagnet": {
+          "title": "Attract XP",
+          "description": "Pull nearby XP gems toward you (upgradeable)"
         }
       }
     },
@@ -92,7 +96,7 @@
         "speed": "Speed: {value} (+20)",
         "fireRate": "Fire Rate: {value}/s (+30%)",
         "projectiles": "Projectiles: {value} (+1)",
-        "range": "Range: {value} (+30%)",
+        "range": "Range: {value} (+15%, max 250)",
         "maxHealth": "Max Health: {value} (+1)",
         "slowWeapon": "Slow Weapon: {status} (Toggle)",
         "slowEffect": "Slow Effect: {value}% (+10%)",
@@ -114,7 +118,9 @@
   "levels": {
     "1": "Level 1",
     "2": "Level 2",
-    "3": "Level 3"
+    "3": "Level 3",
+    "4": "Level 4",
+    "5": "Level 5"
   },
   "language": {
     "select": "Language",

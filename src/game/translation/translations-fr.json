@@ -33,7 +33,7 @@
         },
         "targetingZone": {
           "title": "Augmenter la portée de visée",
-          "description": "Viser les ennemis 30% plus loin"
+          "description": "Viser les ennemis 15% plus loin (max 250)"
         },
         "slowWeapon": {
           "title": "Activer l'arme de ralentissement",
@@ -54,6 +54,10 @@
         "increaseHealth": {
           "title": "Augmenter la santé maximale",
           "description": "Santé max +1 et restauration de santé"
+        },
+        "xpMagnet": {
+          "title": "Attirer l'XP",
+          "description": "Attire les gemmes d'XP proches (améliorable)"
         }
       }
     },
@@ -92,7 +96,7 @@
         "speed": "Vitesse : {value} (+20)",
         "fireRate": "Cadence de tir : {value}/s (+30%)",
         "projectiles": "Projectiles : {value} (+1)",
-        "range": "Portée : {value} (+30%)",
+        "range": "Portée : {value} (+15%, max 250)",
         "maxHealth": "Santé maximale : {value} (+1)",
         "slowWeapon": "Arme de ralentissement : {status} (Basculer)",
         "slowEffect": "Effet de ralentissement : {value}% (+10%)",
@@ -114,7 +118,9 @@
   "levels": {
     "1": "Niveau 1",
     "2": "Niveau 2",
-    "3": "Niveau 3"
+    "3": "Niveau 3",
+    "4": "Niveau 4",
+    "5": "Niveau 5"
   },
   "language": {
     "select": "Langue",

@@ -73,6 +73,11 @@ export function showLevelUpMenu(
       text: t().menus.levelUp.options.increaseHealth.title,
       description: t().menus.levelUp.options.increaseHealth.description,
     },
+    {
+      id: "xpMagnet",
+      text: t().menus.levelUp.options.xpMagnet.title,
+      description: t().menus.levelUp.options.xpMagnet.description,
+    },
   ];
 
   // Filter out options based on weapon states:
@@ -505,6 +510,40 @@ export function showLevelUpMenu(
           "levelUpMenu",
         ]);
         iconElements = [healthBg, healthCircle, healthSymbol];
+        break;
+      }
+
+      case "xpMagnet": {
+        // XP attract icon - magenta
+        iconColor = [255, 0, 255];
+        const magnetBg = k.add([
+          k.circle(iconSize / 2),
+          k.color(iconColor[0] * 0.2, iconColor[1] * 0.2, iconColor[2] * 0.2),
+          k.pos(iconX, iconY),
+          k.anchor("center"),
+          k.fixed(),
+          k.z(Z_INDEX.LEVEL_UP_MENU_OPTIONS),
+          "levelUpMenu",
+        ]);
+        const magnetCircle = k.add([
+          k.circle(iconSize / 2 - 6),
+          k.color(iconColor[0], iconColor[1], iconColor[2]),
+          k.pos(iconX, iconY),
+          k.anchor("center"),
+          k.fixed(),
+          k.z(Z_INDEX.LEVEL_UP_MENU_HIGHLIGHT),
+          "levelUpMenu",
+        ]);
+        const magnetSymbol = k.add([
+          k.text("U", { size: 28 }),
+          k.color(255, 255, 255),
+          k.pos(iconX, iconY),
+          k.anchor("center"),
+          k.fixed(),
+          k.z(Z_INDEX.LEVEL_UP_MENU_HIGHLIGHT + 1),
+          "levelUpMenu",
+        ]);
+        iconElements = [magnetBg, magnetCircle, magnetSymbol];
         break;
       }
 

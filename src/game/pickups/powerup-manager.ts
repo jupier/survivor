@@ -7,6 +7,10 @@ export function spawnPowerUp(
   position: { x: number; y: number },
   type?: PowerUpType
 ): void {
+  // Prevent power-ups from accumulating forever (performance)
+  // Keep only the most recent power-ups, and auto-despawn after a short time.
+  const POWER_UP_LIFETIME_SECONDS = 20;
+
   // Random type if not specified
   const powerUpType =
     type ||
@@ -36,10 +40,11 @@ export function spawnPowerUp(
   // Store type
   (powerUp as any).powerUpType = powerUpType;
 
-  // Pulsing animation
-  powerUp.onUpdate(() => {
-    const pulse = 1 + Math.sin(k.time() * 6) * 0.2;
-    powerUp.scale = k.vec2(pulse, pulse);
+  // Auto-despawn after lifetime expires
+  k.wait(POWER_UP_LIFETIME_SECONDS, () => {
+    if (powerUp.exists()) {
+      powerUp.destroy();
+    }
   });
 }
 
