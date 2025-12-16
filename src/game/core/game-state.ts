@@ -42,9 +42,9 @@ export interface GameState {
 export function createInitialGameState(): GameState {
   return {
     speed: 120,
-    fireInterval: 1,
+    fireInterval: 0.8, // Faster starting fire rate (was 1.0)
     projectileCount: 1,
-    targetingZoneRadius: 100,
+    targetingZoneRadius: 110, // Slightly larger starting range (was 100)
     xpAttractRadius: 0,
     slowWeaponActive: false,
     slowEffectPercentage: 15, // 15% speed reduction by default (reduced from 30%)
@@ -52,11 +52,11 @@ export function createInitialGameState(): GameState {
     aoeWeaponCooldown: 1.5, // Cooldown between AOE attacks (1.5 seconds)
     playerExperience: 0,
     playerLevel: 1,
-    maxExperience: 50,
-    playerHealth: 2,
-    maxHealth: 2,
+    maxExperience: 40, // Lower first level-up requirement (was 50)
+    playerHealth: 3, // More starting health (was 2)
+    maxHealth: 3, // More starting health (was 2)
     gameTime: 600, // 10 minutes
-    enemySpawnInterval: 1,
+    enemySpawnInterval: 1.5, // Slower initial spawn rate (was 1.0)
     lastSpawnRateIncrease: 0,
     isPaused: false,
     enemiesKilled: 0,

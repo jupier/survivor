@@ -683,9 +683,9 @@ export class Game {
           this.state.gameTime = 0;
         }
 
-        // Increase enemy spawn rate every 15 seconds
+        // Increase enemy spawn rate every 20 seconds (was 15)
         const gameTimeElapsed = this.initialGameTime - this.state.gameTime;
-        const spawnRateIncreaseInterval = 15;
+        const spawnRateIncreaseInterval = 20;
 
         // Start enemy types based on game time elapsed (synced with game timer)
         if (this.enemySpawnControllers) {

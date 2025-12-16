@@ -246,9 +246,9 @@ export function setupPlayerCollisions(
     if (state.playerExperience >= state.maxExperience) {
       state.playerExperience = 0; // Reset XP
       state.playerLevel++;
-      // Scale XP requirements with level: base 50 + (level - 1) * 15
-      // Level 1: 50 XP, Level 2: 65 XP, Level 3: 80 XP, etc.
-      state.maxExperience = 50 + (state.playerLevel - 1) * 15;
+      // Scale XP requirements with level: base 40 + (level - 1) * 15
+      // Level 1: 40 XP, Level 2: 55 XP, Level 3: 70 XP, etc.
+      state.maxExperience = 40 + (state.playerLevel - 1) * 15;
       callbacks.onLevelUp();
     }
   });
