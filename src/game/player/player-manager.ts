@@ -181,15 +181,42 @@ export function setupPlayerCollisions(
       return;
     }
 
-    state.playerHealth -= 1;
-    callbacks.onHealthChange(state.playerHealth);
+    // Check if this is a boss
+    const isBoss = (enemy as any).enemyType === "boss";
 
-    // Play player hit sound
-    if (sounds?.onPlayerHit) {
-      sounds.onPlayerHit();
+    if (isBoss) {
+      // Boss gets pushed back instead of dying
+      const dx = enemy.pos.x - player.pos.x;
+      const dy = enemy.pos.y - player.pos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 0) {
+        // Push boss away from player
+        const pushDistance = 50; // Push back 50 pixels
+        const pushX = (dx / dist) * pushDistance;
+        const pushY = (dy / dist) * pushDistance;
+        enemy.pos.x += pushX;
+        enemy.pos.y += pushY;
+      }
+      // Boss still damages player
+      state.playerHealth -= 1;
+      callbacks.onHealthChange(state.playerHealth);
+
+      // Play player hit sound
+      if (sounds?.onPlayerHit) {
+        sounds.onPlayerHit();
+      }
+    } else {
+      // Regular enemy dies on contact
+      state.playerHealth -= 1;
+      callbacks.onHealthChange(state.playerHealth);
+
+      // Play player hit sound
+      if (sounds?.onPlayerHit) {
+        sounds.onPlayerHit();
+      }
+
+      enemy.destroy(); // Destroy enemy on contact
     }
-
-    enemy.destroy(); // Destroy enemy on contact
 
     // Hit animation: flash opacity and scale shake
     isInvulnerable = true;

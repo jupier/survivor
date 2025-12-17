@@ -33,9 +33,9 @@ export const LEVEL_CONFIGS: LevelConfig[] = [
     backgroundPatternColor: "#3a2a2a", // Darker red-gray pattern
     enemySpeedMultiplier: 1.2, // 20% faster
     enemyHealthMultiplier: 1.5, // 50% more health
-    enemySpawnIntervalMultiplier: 0.8, // Spawn 20% faster
+    enemySpawnIntervalMultiplier: 0.7, // Spawn 30% faster (was 0.8 = 20% faster)
     bossHealth: 75, // Stronger boss
-    bossSpawnInterval: 90, // 1.5 minutes (more frequent)
+    bossSpawnInterval: 120, // 1.5 minutes (more frequent)
     gameTime: 600, // 10 minutes
   },
   {
@@ -47,7 +47,7 @@ export const LEVEL_CONFIGS: LevelConfig[] = [
     enemyHealthMultiplier: 2.0, // 100% more health
     enemySpawnIntervalMultiplier: 0.6, // Spawn 40% faster
     bossHealth: 100, // Even stronger boss
-    bossSpawnInterval: 60, // 1 minute (more frequent)
+    bossSpawnInterval: 120, // 1 minute (more frequent)
     gameTime: 600, // 10 minutes
   },
   {
@@ -59,7 +59,7 @@ export const LEVEL_CONFIGS: LevelConfig[] = [
     enemyHealthMultiplier: 2.7, // 170% more health
     enemySpawnIntervalMultiplier: 0.5, // Spawn 50% faster
     bossHealth: 130,
-    bossSpawnInterval: 55,
+    bossSpawnInterval: 120,
     gameTime: 600, // 10 minutes
   },
   {
@@ -71,7 +71,7 @@ export const LEVEL_CONFIGS: LevelConfig[] = [
     enemyHealthMultiplier: 3.5, // 250% more health
     enemySpawnIntervalMultiplier: 0.45, // Spawn 55% faster
     bossHealth: 160,
-    bossSpawnInterval: 50,
+    bossSpawnInterval: 120,
     gameTime: 600, // 10 minutes
   },
   // Future levels can be added here easily

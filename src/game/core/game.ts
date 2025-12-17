@@ -1107,12 +1107,24 @@ export class Game {
           }
         }
 
-        // Spawn boss based on level config
+        // Spawn bosses based on level config
+        // Level 1 = 1 boss, Level 2 = 2 bosses, Level 3 = 3 bosses, etc.
         if (!(this as any).lastBossSpawnTime) {
           (this as any).lastBossSpawnTime = 0;
         }
         const bossSpawnInterval = this.currentLevelConfig.bossSpawnInterval;
+        const targetBossCount = this.state.currentLevel; // Number of bosses = level number
+
+        // Count current alive bosses
+        const allEnemies = this.k.get("enemy");
+        const aliveBosses = allEnemies.filter(
+          (e: any) => (e as any).enemyType === "boss" && !(e as any).isDying
+        );
+        const currentBossCount = aliveBosses.length;
+
+        // Spawn bosses if we need more and enough time has passed
         if (
+          currentBossCount < targetBossCount &&
           gameTimeElapsed >= bossSpawnInterval &&
           gameTimeElapsed - (this as any).lastBossSpawnTime >= bossSpawnInterval
         ) {
