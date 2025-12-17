@@ -1,4 +1,5 @@
 import { GameState } from "../core/game-state";
+import { GAME_CONFIG } from "../core/level-config";
 import { PowerUpState, PowerUpType } from "../pickups/powerup-manager";
 import { Z_INDEX } from "../assets/z-index";
 import { t } from "../translation/translations";
@@ -405,8 +406,8 @@ export function updateUI(
   );
   ui.expBar.width = barWidth * expPercentage;
 
-  // Calculate gems: each gem gives 10 XP
-  const xpPerGem = 10;
+  // Calculate gems: each gem gives N XP
+  const xpPerGem = GAME_CONFIG.XP_PER_GEM;
   const gemsCollected = Math.floor(state.playerExperience / xpPerGem);
   const gemsNeeded = Math.ceil(state.maxExperience / xpPerGem);
   ui.expCounterText.text = `${gemsCollected}/${gemsNeeded} ${t().ui.gems}`;

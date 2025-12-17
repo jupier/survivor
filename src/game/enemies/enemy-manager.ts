@@ -1,4 +1,5 @@
 import { Z_INDEX } from "../assets/z-index";
+import { GAME_CONFIG } from "../core/level-config";
 
 export type EnemyType =
   | "normal"
@@ -78,13 +79,15 @@ export function spawnEnemy(
     enemyHealth = 50; // Default, will be set properly in spawnBoss
     enemySpriteName = "enemy-boss";
     actualEnemyType = "boss";
-    sizeMultiplier = 2; // Boss is bigger
-    speedMultiplier = 0.7 * speedMultiplierFromLevel; // Boss is slower, but affected by level
+    sizeMultiplier = GAME_CONFIG.BOSS_SIZE_MULTIPLIER; // Boss is bigger
+    speedMultiplier =
+      GAME_CONFIG.BOSS_SPEED_MULTIPLIER * speedMultiplierFromLevel; // Boss is slower, but affected by level
   } else if (enemyType === "charger") {
     enemyHealth = 1;
     enemySpriteName = "enemy-charger";
     actualEnemyType = "charger";
-    speedMultiplier = 1.5; // Charger is faster (reduced from 1.8)
+    speedMultiplier =
+      GAME_CONFIG.CHARGER_SPEED_MULTIPLIER * speedMultiplierFromLevel; // Charger is faster
   } else if (enemyType === "splitter") {
     enemyHealth = 2;
     enemySpriteName = "enemy-splitter";
@@ -248,8 +251,9 @@ export function spawnEnemy(
     // Add separation force to avoid overlapping with other enemies
     // Only check separation periodically to reduce performance impact
     const SEPARATION_CHECK_INTERVAL = 0.2; // Check every 0.2 seconds
-    const separationForce = 50; // Force strength
-    const separationDistance = actualSize * 1.5; // Minimum distance between enemies
+    const separationForce = GAME_CONFIG.SEPARATION_FORCE; // Force strength
+    const separationDistance =
+      actualSize * GAME_CONFIG.SEPARATION_DISTANCE_MULTIPLIER; // Minimum distance between enemies
     const separationDistanceSquared = separationDistance * separationDistance;
 
     if (
@@ -356,7 +360,7 @@ export function spawnEnemy(
       // Apply charge movement
       if ((enemy as any).isCharging && (enemy as any).chargeDuration > 0) {
         (enemy as any).chargeDuration -= k.dt();
-        const chargeSpeed = actualSpeed * 3;
+        const chargeSpeed = actualSpeed * GAME_CONFIG.CHARGE_SPEED_MULTIPLIER;
         enemy.pos.x += (enemy as any).chargeDirX * chargeSpeed * k.dt();
         enemy.pos.y += (enemy as any).chargeDirY * chargeSpeed * k.dt();
         if ((enemy as any).chargeDuration <= 0) {

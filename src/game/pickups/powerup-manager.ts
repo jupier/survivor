@@ -1,6 +1,7 @@
 export type PowerUpType = "speed" | "magnet" | "invincibility" | "damage";
 
 import { Z_INDEX } from "../assets/z-index";
+import { GAME_CONFIG } from "../core/level-config";
 
 export function spawnPowerUp(
   k: ReturnType<typeof import("kaplay").default>,
@@ -9,7 +10,7 @@ export function spawnPowerUp(
 ): void {
   // Prevent power-ups from accumulating forever (performance)
   // Keep only the most recent power-ups, and auto-despawn after a short time.
-  const POWER_UP_LIFETIME_SECONDS = 20;
+  const POWER_UP_LIFETIME_SECONDS = GAME_CONFIG.POWER_UP_LIFETIME_SECONDS;
 
   // Random type if not specified
   const powerUpType =

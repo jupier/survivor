@@ -1,3 +1,5 @@
+import { GAME_CONFIG } from "../core/level-config";
+
 export function autoFireAtClosestEnemy(
   k: ReturnType<typeof import("kaplay").default>,
   player: any,
@@ -73,8 +75,8 @@ export function fireProjectile(
   onEnemyHit: (enemy: any) => void,
   isPaused: () => boolean = () => false
 ): void {
-  const projectileSpeed = 300; // pixels per second
-  const projectileSize = 6; // Scaled down from 8
+  const projectileSpeed = GAME_CONFIG.PROJECTILE_SPEED;
+  const projectileSize = GAME_CONFIG.PROJECTILE_SIZE;
 
   // Calculate rotation angle in degrees (Kaplay uses degrees)
   const angle = Math.atan2(directionY, directionX) * (180 / Math.PI);

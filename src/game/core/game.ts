@@ -28,7 +28,7 @@ import { loadSounds, SoundManager } from "../sound/sound-manager";
 import { showDamageNumber } from "../ui/damage-numbers";
 import { spawnPowerUp, updatePowerUps } from "../pickups/powerup-manager";
 import { spawnBoss } from "../enemies/enemy-manager";
-import { getLevelConfig, LevelConfig } from "./level-config";
+import { getLevelConfig, LevelConfig, GAME_CONFIG } from "./level-config";
 import { t } from "../translation/translations";
 import { Z_INDEX } from "../assets/z-index";
 import {
@@ -38,12 +38,7 @@ import {
 } from "../menu/admin-menu-manager";
 import { showHomeScreen, hideHomeScreen } from "../menu/home-screen";
 
-const TARGETING_ZONE_UPGRADE_MULTIPLIER = 1.1; // was 1.3 (30%)
-const TARGETING_ZONE_MAX_RADIUS = 225;
-const XP_ATTRACT_UPGRADE_MULTIPLIER = 1.25;
-const XP_ATTRACT_MAX_RADIUS = 200; // always smaller than targeting zone max
-const XP_ATTRACT_MAX_FRACTION_OF_TARGETING = 0.8; // keep attraction smaller than targeting zone
-const XP_ATTRACT_FIRST_RADIUS = 50;
+// All constants moved to GAME_CONFIG in level-config.ts
 
 export class Game {
   private k: ReturnType<typeof kaplay>;
@@ -87,8 +82,8 @@ export class Game {
     this.setupGame();
   }
 
-  private enemySpeed = 45; // pixels per second (reduced for better playability)
-  private enemySize = 24; // size of enemy sprite (24x24, scaled down from 32)
+  private enemySpeed = GAME_CONFIG.ENEMY_SPEED;
+  private enemySize = GAME_CONFIG.ENEMY_SIZE;
   private currentLevelConfig!: LevelConfig;
   private initialGameTime: number = 600; // Track initial game time for current level
   private bossesKilledThisLevel: number = 0; // Track total bosses killed in current level
@@ -469,28 +464,31 @@ export class Game {
 
   private applyTargetingZoneUpgrade(): void {
     const upgraded = Math.round(
-      this.state.targetingZoneRadius * TARGETING_ZONE_UPGRADE_MULTIPLIER
+      this.state.targetingZoneRadius *
+        GAME_CONFIG.TARGETING_ZONE_UPGRADE_MULTIPLIER
     );
     this.state.targetingZoneRadius = Math.min(
       upgraded,
-      TARGETING_ZONE_MAX_RADIUS
+      GAME_CONFIG.TARGETING_ZONE_MAX_RADIUS
     );
   }
 
   private applyXPAttractUpgrade(): void {
     const upgraded =
       this.state.xpAttractRadius <= 0
-        ? XP_ATTRACT_FIRST_RADIUS
+        ? GAME_CONFIG.XP_ATTRACT_FIRST_RADIUS
         : Math.round(
-            this.state.xpAttractRadius * XP_ATTRACT_UPGRADE_MULTIPLIER
+            this.state.xpAttractRadius *
+              GAME_CONFIG.XP_ATTRACT_UPGRADE_MULTIPLIER
           );
 
     const maxAllowed = Math.max(
       0,
       Math.min(
-        XP_ATTRACT_MAX_RADIUS,
+        GAME_CONFIG.XP_ATTRACT_MAX_RADIUS,
         Math.floor(
-          this.state.targetingZoneRadius * XP_ATTRACT_MAX_FRACTION_OF_TARGETING
+          this.state.targetingZoneRadius *
+            GAME_CONFIG.XP_ATTRACT_MAX_FRACTION_OF_TARGETING
         )
       )
     );
@@ -522,9 +520,11 @@ export class Game {
       (enemy as any).health = 1;
     }
 
-    const damage = 1;
-    const isCritical = Math.random() < 0.1; // 10% crit chance
-    const actualDamage = isCritical ? 2 : damage;
+    const damage = GAME_CONFIG.PROJECTILE_DAMAGE;
+    const isCritical = Math.random() < GAME_CONFIG.CRIT_CHANCE;
+    const actualDamage = isCritical
+      ? damage * GAME_CONFIG.CRIT_DAMAGE_MULTIPLIER
+      : damage;
 
     (enemy as any).health -= actualDamage;
 
@@ -545,8 +545,8 @@ export class Game {
         // Spawn 2 smaller enemies
         for (let i = 0; i < 2; i++) {
           const angle = (Math.PI * 2 * i) / 2;
-          const offsetX = Math.cos(angle) * 30;
-          const offsetY = Math.sin(angle) * 30;
+          const offsetX = Math.cos(angle) * GAME_CONFIG.SPLITTER_SPAWN_OFFSET;
+          const offsetY = Math.sin(angle) * GAME_CONFIG.SPLITTER_SPAWN_OFFSET;
           spawnEnemy(
             this.k,
             this.player,
@@ -569,7 +569,7 @@ export class Game {
       } else if (enemyType === "exploder") {
         // Damage nearby enemies
         const allEnemies = this.k.get("enemy");
-        const explosionRadius = 60;
+        const explosionRadius = GAME_CONFIG.EXPLOSION_RADIUS;
         for (const otherEnemy of allEnemies) {
           if (otherEnemy === enemy) continue;
           const dx = otherEnemy.pos.x - enemy.pos.x;
@@ -586,34 +586,48 @@ export class Game {
       this.sounds.playEnemyDeath();
 
       // Screen shake on enemy death (more intense for bosses)
-      const shakeIntensity = enemyType === "boss" ? 8 : 3;
-      const shakeDuration = enemyType === "boss" ? 0.3 : 0.15;
+      const shakeIntensity =
+        enemyType === "boss"
+          ? GAME_CONFIG.BOSS_SHAKE_INTENSITY
+          : GAME_CONFIG.NORMAL_SHAKE_INTENSITY;
+      const shakeDuration =
+        enemyType === "boss"
+          ? GAME_CONFIG.BOSS_SHAKE_DURATION
+          : GAME_CONFIG.NORMAL_SHAKE_DURATION;
       this.shakeScreen(shakeIntensity, shakeDuration);
 
       // Spawn XP point at enemy position
       spawnXP(this.k, enemy.pos);
 
-      // Boss drops guaranteed health + extra XP
+      // Boss drops health (chance-based) + extra XP
       if (enemyType === "boss") {
-        spawnHealthPoint(this.k, enemy.pos);
+        if (Math.random() < GAME_CONFIG.BOSS_HEALTH_SPAWN_CHANCE) {
+          spawnHealthPoint(this.k, enemy.pos);
+        }
         // Spawn extra XP
         for (let i = 0; i < 5; i++) {
           const angle = Math.random() * Math.PI * 2;
-          const dist = 20 + Math.random() * 30;
+          const dist =
+            GAME_CONFIG.XP_DROP_MIN_DISTANCE +
+            Math.random() *
+              (GAME_CONFIG.XP_DROP_MAX_DISTANCE -
+                GAME_CONFIG.XP_DROP_MIN_DISTANCE);
           spawnXP(this.k, {
             x: enemy.pos.x + Math.cos(angle) * dist,
             y: enemy.pos.y + Math.sin(angle) * dist,
           });
         }
         // Boss always drops a power-up
-        spawnPowerUp(this.k, enemy.pos);
+        if (GAME_CONFIG.BOSS_ALWAYS_DROP_POWER_UP) {
+          spawnPowerUp(this.k, enemy.pos);
+        }
       } else {
-        // Rare chance to spawn health point (10% chance)
-        if (Math.random() < 0.1) {
+        // Rare chance to spawn health point
+        if (Math.random() < GAME_CONFIG.HEALTH_SPAWN_CHANCE) {
           spawnHealthPoint(this.k, enemy.pos);
         }
-        // 5% chance to spawn power-up
-        if (Math.random() < 0.05) {
+        // Rare chance to spawn power-up
+        if (Math.random() < GAME_CONFIG.POWER_UP_SPAWN_CHANCE) {
           spawnPowerUp(this.k, enemy.pos);
         }
       }
@@ -686,15 +700,16 @@ export class Game {
           this.state.gameTime = 0;
         }
 
-        // Increase enemy spawn rate every 20 seconds (was 15)
+        // Increase enemy spawn rate every N seconds
         const gameTimeElapsed = this.initialGameTime - this.state.gameTime;
-        const spawnRateIncreaseInterval = 20;
+        const spawnRateIncreaseInterval =
+          GAME_CONFIG.SPAWN_RATE_INCREASE_INTERVAL;
 
         // Start enemy types based on game time elapsed (synced with game timer)
         if (this.enemySpawnControllers) {
-          // Start strong enemies after 30 seconds (gameTime = 570)
+          // Start strong enemies after N seconds
           if (
-            gameTimeElapsed >= 30 &&
+            gameTimeElapsed >= GAME_CONFIG.STRONG_ENEMY_UNLOCK &&
             !this.enemySpawnControllers.strongController
           ) {
             this.enemySpawnControllers.strongController = this.k.loop(
@@ -724,9 +739,9 @@ export class Game {
             );
           }
 
-          // Start splitter enemies after 45 seconds (earlier for more challenge)
+          // Start splitter enemies after N seconds
           if (
-            gameTimeElapsed >= 45 &&
+            gameTimeElapsed >= GAME_CONFIG.SPLITTER_ENEMY_UNLOCK &&
             !this.enemySpawnControllers.splitterController
           ) {
             this.enemySpawnControllers.splitterController = this.k.loop(
@@ -756,9 +771,9 @@ export class Game {
             );
           }
 
-          // Start exploder enemies after 90 seconds (gameTime = 510)
+          // Start exploder enemies after N seconds
           if (
-            gameTimeElapsed >= 90 &&
+            gameTimeElapsed >= GAME_CONFIG.EXPLODER_ENEMY_UNLOCK &&
             !this.enemySpawnControllers.exploderController
           ) {
             this.enemySpawnControllers.exploderController = this.k.loop(
@@ -788,12 +803,14 @@ export class Game {
             );
           }
 
-          // Start swarm enemy spawning after 90 seconds (gameTime = 510)
+          // Start swarm enemy spawning after N seconds
           if (
-            gameTimeElapsed >= 90 &&
+            gameTimeElapsed >= GAME_CONFIG.SWARM_ENEMY_UNLOCK &&
             !this.enemySpawnControllers.swarmController
           ) {
-            const swarmSpawnInterval = this.state.enemySpawnInterval / 2; // Double the spawn rate
+            const swarmSpawnInterval =
+              this.state.enemySpawnInterval *
+              GAME_CONFIG.SWARM_SPAWN_RATE_MULTIPLIER;
             this.enemySpawnControllers.swarmController = this.k.loop(
               swarmSpawnInterval,
               () => {
@@ -821,9 +838,9 @@ export class Game {
             );
           }
 
-          // Start elite enemies after 120 seconds (gameTime = 480)
+          // Start elite enemies after N seconds
           if (
-            gameTimeElapsed >= 120 &&
+            gameTimeElapsed >= GAME_CONFIG.ELITE_ENEMY_UNLOCK &&
             !this.enemySpawnControllers.eliteController
           ) {
             this.enemySpawnControllers.eliteController = this.k.loop(
@@ -853,9 +870,9 @@ export class Game {
             );
           }
 
-          // Start charger enemies after 150 seconds (gameTime = 450)
+          // Start charger enemies after N seconds
           if (
-            gameTimeElapsed >= 150 &&
+            gameTimeElapsed >= GAME_CONFIG.CHARGER_ENEMY_UNLOCK &&
             !this.enemySpawnControllers.chargerController
           ) {
             this.enemySpawnControllers.chargerController = this.k.loop(
@@ -1119,7 +1136,7 @@ export class Game {
         }
 
         // Spawn bosses based on level config
-        // One boss at a time, need to kill N bosses total to advance level N
+        // All bosses spawn at the same time: Level 1 = 1 boss, Level 2 = 2 bosses, etc.
         if (!(this as any).lastBossSpawnTime) {
           (this as any).lastBossSpawnTime = 0;
         }
@@ -1133,8 +1150,8 @@ export class Game {
         );
         const currentBossCount = aliveBosses.length;
 
-        // Spawn one boss at a time if:
-        // - No boss is currently alive
+        // Spawn all bosses at once if:
+        // - No bosses are currently alive
         // - We haven't killed enough bosses yet for this level
         // - Enough time has passed
         if (
@@ -1144,23 +1161,29 @@ export class Game {
           gameTimeElapsed - (this as any).lastBossSpawnTime >= bossSpawnInterval
         ) {
           (this as any).lastBossSpawnTime = gameTimeElapsed;
-          spawnBoss(
-            this.k,
-            this.player,
-            this.enemySpeed,
-            this.enemySize,
-            () => this.state.isPaused,
-            () => ({
-              active: this.state.slowWeaponActive,
-              effectPercentage: this.state.slowEffectPercentage,
-              zoneRadius: this.state.targetingZoneRadius,
-            }),
-            this.currentLevelConfig.bossHealth,
-            {
-              speedMultiplier: this.currentLevelConfig.enemySpeedMultiplier,
-              healthMultiplier: this.currentLevelConfig.enemyHealthMultiplier,
-            }
-          );
+
+          // Spawn all bosses for this level at the same time
+          const bossesToSpawn =
+            bossesNeededForLevel - this.bossesKilledThisLevel;
+          for (let i = 0; i < bossesToSpawn; i++) {
+            spawnBoss(
+              this.k,
+              this.player,
+              this.enemySpeed,
+              this.enemySize,
+              () => this.state.isPaused,
+              () => ({
+                active: this.state.slowWeaponActive,
+                effectPercentage: this.state.slowEffectPercentage,
+                zoneRadius: this.state.targetingZoneRadius,
+              }),
+              this.currentLevelConfig.bossHealth,
+              {
+                speedMultiplier: this.currentLevelConfig.enemySpeedMultiplier,
+                healthMultiplier: this.currentLevelConfig.enemyHealthMultiplier,
+              }
+            );
+          }
         }
 
         // Check for time up
@@ -1248,22 +1271,20 @@ export class Game {
 
   private spawnHorde(): void {
     // Calculate horde size based on horde count
-    // Base: 15 enemies, +5 for each horde
-    const baseEnemies = 15;
-    const enemiesPerHorde = 5;
-    const hordeSize = baseEnemies + (this.hordeCount - 1) * enemiesPerHorde;
+    const hordeSize =
+      GAME_CONFIG.HORDE_BASE_ENEMIES +
+      (this.hordeCount - 1) * GAME_CONFIG.HORDE_ENEMIES_INCREMENT;
 
     // Spawn distance from player (far but visible)
-    const spawnRadius = 400; // Distance from player
+    const spawnRadius = GAME_CONFIG.HORDE_SPAWN_RADIUS;
 
     // Get player position
     const playerX = this.player.pos.x;
     const playerY = this.player.pos.y;
 
     // Spawn mix of normal and strong enemies
-    // 70% normal, 30% strong
     for (let i = 0; i < hordeSize; i++) {
-      const isStrong = Math.random() < 0.3;
+      const isStrong = Math.random() < GAME_CONFIG.HORDE_STRONG_ENEMY_CHANCE;
 
       // Calculate position in circle around player
       const angle = (Math.PI * 2 * i) / hordeSize; // Evenly distribute around circle

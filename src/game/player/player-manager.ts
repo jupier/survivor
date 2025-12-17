@@ -1,5 +1,6 @@
 import { activatePowerUp, PowerUpState } from "../pickups/powerup-manager";
 import { Z_INDEX } from "../assets/z-index";
+import { GAME_CONFIG } from "../core/level-config";
 
 export function createPlayer(k: ReturnType<typeof import("kaplay").default>): {
   player: any;
@@ -191,7 +192,7 @@ export function setupPlayerCollisions(
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist > 0) {
         // Push boss away from player
-        const pushDistance = 50; // Push back 50 pixels
+        const pushDistance = GAME_CONFIG.BOSS_PUSH_DISTANCE;
         const pushX = (dx / dist) * pushDistance;
         const pushY = (dy / dist) * pushDistance;
         enemy.pos.x += pushX;
@@ -259,7 +260,7 @@ export function setupPlayerCollisions(
 
   // Handle player collision with XP points
   player.onCollide("xp", (xp: any) => {
-    state.playerExperience += 10; // Gain 10 XP per point
+    state.playerExperience += GAME_CONFIG.XP_PER_GEM; // Gain XP per point
 
     // Play XP collect sound
     if (sounds?.onXPCollect) {
@@ -275,7 +276,9 @@ export function setupPlayerCollisions(
       state.playerLevel++;
       // Scale XP requirements with level: base 40 + (level - 1) * 15
       // Level 1: 40 XP, Level 2: 55 XP, Level 3: 70 XP, etc.
-      state.maxExperience = 40 + (state.playerLevel - 1) * 15;
+      state.maxExperience =
+        GAME_CONFIG.XP_LEVEL_UP_BASE +
+        (state.playerLevel - 1) * GAME_CONFIG.XP_LEVEL_UP_INCREMENT;
       callbacks.onLevelUp();
     }
   });
@@ -322,10 +325,10 @@ export function setupPlayerCollisions(
     const magnetActive = !!powerUps?.magnet.active;
 
     const baseRadius = Math.max(0, state.xpAttractRadius ?? 0);
-    const baseSpeed = 120;
+    const baseSpeed = GAME_CONFIG.XP_ATTRACT_BASE_SPEED;
 
-    const magnetRadius = 150;
-    const magnetSpeed = 200;
+    const magnetRadius = GAME_CONFIG.MAGNET_RADIUS;
+    const magnetSpeed = GAME_CONFIG.MAGNET_SPEED;
 
     const xpRadius = magnetActive
       ? Math.max(baseRadius, magnetRadius)
@@ -348,20 +351,6 @@ export function setupPlayerCollisions(
       }
     }
 
-    // Keep health attraction as a magnet power-up perk only
-    if (magnetActive) {
-      const healthPoints = k.get("healthPoint");
-      for (const hp of healthPoints) {
-        const dx = player.pos.x - hp.pos.x;
-        const dy = player.pos.y - hp.pos.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < magnetRadius && dist > 0) {
-          const moveX = (dx / dist) * magnetSpeed * k.dt();
-          const moveY = (dy / dist) * magnetSpeed * k.dt();
-          hp.pos.x += moveX;
-          hp.pos.y += moveY;
-        }
-      }
-    }
+    // Magnet power-up only attracts XP, not health points or power-ups
   });
 }

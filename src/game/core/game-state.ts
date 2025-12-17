@@ -1,4 +1,5 @@
 import { PowerUpState, createPowerUpState } from "../pickups/powerup-manager";
+import { GAME_CONFIG } from "./level-config";
 
 export interface GameState {
   // Player stats
@@ -41,22 +42,22 @@ export interface GameState {
 
 export function createInitialGameState(): GameState {
   return {
-    speed: 120,
-    fireInterval: 0.8, // Faster starting fire rate (was 1.0)
-    projectileCount: 1,
-    targetingZoneRadius: 110, // Slightly larger starting range (was 100)
-    xpAttractRadius: 0,
+    speed: GAME_CONFIG.PLAYER_START_SPEED,
+    fireInterval: GAME_CONFIG.PLAYER_START_FIRE_INTERVAL,
+    projectileCount: GAME_CONFIG.PLAYER_START_PROJECTILE_COUNT,
+    targetingZoneRadius: GAME_CONFIG.PLAYER_START_TARGETING_ZONE_RADIUS,
+    xpAttractRadius: GAME_CONFIG.PLAYER_START_XP_ATTRACT_RADIUS,
     slowWeaponActive: false,
-    slowEffectPercentage: 15, // 15% speed reduction by default (reduced from 30%)
+    slowEffectPercentage: GAME_CONFIG.SLOW_EFFECT_START_PERCENTAGE,
     aoeWeaponActive: false,
-    aoeWeaponCooldown: 1.5, // Cooldown between AOE attacks (1.5 seconds)
+    aoeWeaponCooldown: GAME_CONFIG.AOE_WEAPON_START_COOLDOWN,
     playerExperience: 0,
     playerLevel: 1,
-    maxExperience: 40, // Lower first level-up requirement (was 50)
-    playerHealth: 3, // More starting health (was 2)
-    maxHealth: 3, // More starting health (was 2)
-    gameTime: 600, // 10 minutes
-    enemySpawnInterval: 1.5, // Slower initial spawn rate (was 1.0)
+    maxExperience: GAME_CONFIG.XP_LEVEL_UP_BASE,
+    playerHealth: GAME_CONFIG.PLAYER_START_HEALTH,
+    maxHealth: GAME_CONFIG.PLAYER_START_MAX_HEALTH,
+    gameTime: 600, // 10 minutes (from level config)
+    enemySpawnInterval: GAME_CONFIG.PLAYER_START_ENEMY_SPAWN_INTERVAL,
     lastSpawnRateIncrease: 0,
     isPaused: false,
     enemiesKilled: 0,

@@ -1,3 +1,5 @@
+import { GAME_CONFIG } from "../core/level-config";
+
 export function spawnXP(
   k: ReturnType<typeof import("kaplay").default>,
   position: { x: number; y: number }
@@ -22,7 +24,7 @@ export function spawnXP(
     "xp",
   ]);
 
-  k.wait(5, () => {
+  k.wait(GAME_CONFIG.XP_LIFETIME_SECONDS, () => {
     if (xp.exists()) {
       xp.destroy();
     }
@@ -35,7 +37,8 @@ export function spawnHealthPoint(
 ): void {
   // Prevent health points from accumulating forever (performance)
   // Keep only the most recent health points, and auto-despawn after a short time.
-  const HEALTH_POINT_LIFETIME_SECONDS = 20;
+  const HEALTH_POINT_LIFETIME_SECONDS =
+    GAME_CONFIG.HEALTH_POINT_LIFETIME_SECONDS;
 
   // Create health point with heart sprite (scaled down to 75% of original size)
   const healthPoint = k.add([
