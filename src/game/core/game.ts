@@ -91,6 +91,9 @@ export class Game {
   private enemySize = 24; // size of enemy sprite (24x24, scaled down from 32)
   private currentLevelConfig!: LevelConfig;
   private initialGameTime: number = 600; // Track initial game time for current level
+  private bossesKilledThisLevel: number = 0; // Track total bosses killed in current level
+  private lastHordeTime: number = 0; // Track last horde spawn time
+  private hordeCount: number = 0; // Track number of hordes spawned
 
   private getLevelMultipliers() {
     return {
@@ -1107,13 +1110,21 @@ export class Game {
           }
         }
 
+        // Spawn horde every 30 seconds
+        const hordeInterval = 30;
+        if (gameTimeElapsed - this.lastHordeTime >= hordeInterval) {
+          this.lastHordeTime = gameTimeElapsed;
+          this.hordeCount++;
+          this.spawnHorde();
+        }
+
         // Spawn bosses based on level config
-        // Level 1 = 1 boss, Level 2 = 2 bosses, Level 3 = 3 bosses, etc.
+        // One boss at a time, need to kill N bosses total to advance level N
         if (!(this as any).lastBossSpawnTime) {
           (this as any).lastBossSpawnTime = 0;
         }
         const bossSpawnInterval = this.currentLevelConfig.bossSpawnInterval;
-        const targetBossCount = this.state.currentLevel; // Number of bosses = level number
+        const bossesNeededForLevel = this.state.currentLevel; // Level 1 = 1 boss, Level 2 = 2 bosses, etc.
 
         // Count current alive bosses
         const allEnemies = this.k.get("enemy");
@@ -1122,9 +1133,13 @@ export class Game {
         );
         const currentBossCount = aliveBosses.length;
 
-        // Spawn bosses if we need more and enough time has passed
+        // Spawn one boss at a time if:
+        // - No boss is currently alive
+        // - We haven't killed enough bosses yet for this level
+        // - Enough time has passed
         if (
-          currentBossCount < targetBossCount &&
+          currentBossCount === 0 &&
+          this.bossesKilledThisLevel < bossesNeededForLevel &&
           gameTimeElapsed >= bossSpawnInterval &&
           gameTimeElapsed - (this as any).lastBossSpawnTime >= bossSpawnInterval
         ) {
@@ -1231,6 +1246,54 @@ export class Game {
     });
   }
 
+  private spawnHorde(): void {
+    // Calculate horde size based on horde count
+    // Base: 15 enemies, +5 for each horde
+    const baseEnemies = 15;
+    const enemiesPerHorde = 5;
+    const hordeSize = baseEnemies + (this.hordeCount - 1) * enemiesPerHorde;
+
+    // Spawn distance from player (far but visible)
+    const spawnRadius = 400; // Distance from player
+
+    // Get player position
+    const playerX = this.player.pos.x;
+    const playerY = this.player.pos.y;
+
+    // Spawn mix of normal and strong enemies
+    // 70% normal, 30% strong
+    for (let i = 0; i < hordeSize; i++) {
+      const isStrong = Math.random() < 0.3;
+
+      // Calculate position in circle around player
+      const angle = (Math.PI * 2 * i) / hordeSize; // Evenly distribute around circle
+      const spawnX = playerX + Math.cos(angle) * spawnRadius;
+      const spawnY = playerY + Math.sin(angle) * spawnRadius;
+
+      spawnEnemy(
+        this.k,
+        this.player,
+        this.enemySpeed,
+        this.enemySize,
+        isStrong,
+        false,
+        false,
+        () => this.state.isPaused,
+        () => ({
+          active: this.state.slowWeaponActive,
+          effectPercentage: this.state.slowEffectPercentage,
+          zoneRadius: this.state.targetingZoneRadius,
+        }),
+        { x: spawnX, y: spawnY },
+        isStrong ? "strong" : "normal",
+        this.getLevelMultipliers()
+      );
+    }
+
+    // Optional: Show horde warning message
+    // You could add a visual indicator here
+  }
+
   private handleLevelUp(): void {
     // Play level up sound
     this.sounds.playLevelUp();
@@ -1330,29 +1393,22 @@ export class Game {
       });
   }
 
-  private handleBossKilled(dyingBoss: any): void {
-    // Prevent multiple transitions
-    if (this.isTransitioning) {
-      return;
-    }
+  private handleBossKilled(_dyingBoss: any): void {
+    // Increment boss kill counter for this level
+    this.bossesKilledThisLevel++;
 
-    // Check if there are any bosses still alive (excluding the one that just died)
-    // Check all enemies with the "enemy" tag
-    const allEnemies = this.k.get("enemy");
-    const aliveBosses = allEnemies.filter(
-      (e: any) =>
-        (e as any).enemyType === "boss" &&
-        e !== dyingBoss &&
-        !(e as any).isDying
-    );
+    // Check if we've killed enough bosses to advance
+    const bossesNeededForLevel = this.state.currentLevel;
 
-    if (aliveBosses.length === 0) {
-      // All bosses killed, transition to next level
-      this.isTransitioning = true;
-      // Small delay to ensure death animation starts before transition
-      this.k.wait(0.3, () => {
-        this.transitionToNextLevel();
-      });
+    if (this.bossesKilledThisLevel >= bossesNeededForLevel) {
+      // Killed enough bosses, transition to next level
+      if (!this.isTransitioning) {
+        this.isTransitioning = true;
+        // Small delay to ensure death animation starts before transition
+        this.k.wait(0.3, () => {
+          this.transitionToNextLevel();
+        });
+      }
     }
   }
 
@@ -1376,6 +1432,9 @@ export class Game {
     this.initialGameTime = nextLevelConfig.gameTime;
     (this as any).lastBossSpawnTime = 0;
     this.state.lastSpawnRateIncrease = 0;
+    this.bossesKilledThisLevel = 0; // Reset boss kill counter for new level
+    this.lastHordeTime = 0; // Reset horde timer for new level
+    this.hordeCount = 0; // Reset horde count for new level
 
     // Reset enemy spawn interval based on level
     this.state.enemySpawnInterval =
