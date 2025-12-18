@@ -36,12 +36,12 @@ import {
   hideAdminMenu,
   updateAllButtonTexts,
 } from "../menu/admin-menu-manager";
-import { showHomeScreen, hideHomeScreen } from "../menu/home-screen";
+import { hideHomeScreen } from "../menu/home-screen";
 
 // All constants moved to GAME_CONFIG in level-config.ts
 
 export class Game {
-  private k: ReturnType<typeof kaplay>;
+  private k!: ReturnType<typeof kaplay>;
   private state: GameState;
   private ui!: UIElements; // Initialized in setupGame
   private player: any;
@@ -67,19 +67,27 @@ export class Game {
   private isAdminMenuOpen: boolean = false;
   private gameStarted: boolean = false;
 
-  constructor(container: HTMLElement) {
-    const width = Math.min(window.innerWidth, 1200);
-    const height = Math.min(window.innerHeight, 800);
-
-    this.k = kaplay({
-      width,
-      height,
-      root: container,
-      background: [42, 42, 52], // Slightly darker blue-gray to match moon theme
-    });
+  constructor(container: HTMLElement, kInstance?: ReturnType<typeof kaplay>) {
+    // Use the provided kaplay instance or create a new one
+    if (kInstance) {
+      this.k = kInstance;
+    } else {
+      const width = Math.min(window.innerWidth, 1200);
+      const height = Math.min(window.innerHeight, 800);
+      this.k = kaplay({
+        width,
+        height,
+        root: container,
+        background: [42, 42, 52],
+      });
+    }
 
     this.state = createInitialGameState();
-    this.setupGame();
+    // setupGame is async, but we'll call it separately
+  }
+
+  public async initialize(): Promise<void> {
+    await this.setupGame();
   }
 
   private enemySpeed = GAME_CONFIG.ENEMY_SPEED;
@@ -271,26 +279,11 @@ export class Game {
     // Main game loop (will be started when user clicks start)
     this.setupGameLoop();
 
-    // Show home screen instead of starting immediately
-    this.showHomeScreen();
-
     // Spawn enemies of each type for testing
     // this.spawnManyEnemies(50);
   }
 
-  private async showHomeScreen(): Promise<void> {
-    // Pause the game initially
-    this.state.isPaused = true;
-
-    await showHomeScreen(this.k, {
-      onStart: () => {
-        console.log("onStart callback invoked in Game class");
-        this.startGame();
-      },
-    });
-  }
-
-  private startGame(): void {
+  public startGame(): void {
     console.log("startGame() called");
     // Hide home screen
     hideHomeScreen(this.k);

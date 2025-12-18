@@ -18,11 +18,12 @@ function createAudioContext(): AudioContext {
   return new (window.AudioContext || (window as any).webkitAudioContext)();
 }
 
-// Generate a simple beep sound using Web Audio API
-function generateBeepSound(
+// Generate a pleasant sound with harmonics and smooth envelope
+function generatePleasantSound(
   audioContext: AudioContext,
   frequency: number,
-  duration: number
+  duration: number,
+  type: "hit" | "collect" | "fire" | "death" = "hit"
 ): AudioBuffer {
   const sampleRate = audioContext.sampleRate;
   const numSamples = Math.floor(sampleRate * duration);
@@ -31,28 +32,106 @@ function generateBeepSound(
 
   for (let i = 0; i < numSamples; i++) {
     const t = i / sampleRate;
-    // Apply envelope to avoid clicks
-    const envelope = Math.min(1, t * 100) * Math.min(1, (duration - t) * 100);
-    data[i] = Math.sin(2 * Math.PI * frequency * t) * envelope * 0.3;
+    const progress = t / duration;
+
+    // Smooth, gentle envelope (softer attack and decay)
+    let envelope = 1;
+    if (type === "hit" || type === "fire") {
+      // Very gentle attack and decay
+      const attackTime = 0.08;
+      const decayTime = 0.15;
+      if (t < attackTime) {
+        envelope = Math.sin(((t / attackTime) * Math.PI) / 2); // Smooth sine attack
+      } else if (t < attackTime + decayTime) {
+        const decayProgress = (t - attackTime) / decayTime;
+        envelope = 1 - decayProgress * 0.6; // Gentle decay
+      } else {
+        envelope = 0.4 * Math.exp(-(t - attackTime - decayTime) * 5); // Smooth fade
+      }
+    } else if (type === "collect") {
+      // Very smooth bell-like envelope
+      const attackTime = 0.03;
+      const sustainTime = 0.08;
+      if (t < attackTime) {
+        envelope = Math.sin(((t / attackTime) * Math.PI) / 2); // Smooth attack
+      } else if (t < attackTime + sustainTime) {
+        envelope = 1;
+      } else {
+        const releaseProgress =
+          (t - attackTime - sustainTime) /
+          (duration - attackTime - sustainTime);
+        envelope = Math.cos((releaseProgress * Math.PI) / 2); // Smooth cosine release
+      }
+    } else {
+      // Death sound - very gentle fade
+      envelope = Math.exp(-t * 2) * (1 - progress * 0.3);
+    }
+
+    // Softer harmonics - less aggressive
+    let sample = 0;
+    if (type === "hit" || type === "fire") {
+      // Softer sound with gentle harmonics
+      sample = Math.sin(2 * Math.PI * frequency * t) * 0.7;
+      sample += Math.sin(2 * Math.PI * frequency * 2 * t) * 0.2; // Reduced harmonics
+      sample += Math.sin(2 * Math.PI * frequency * 3 * t) * 0.05; // Much less
+    } else if (type === "collect") {
+      // Gentle chime with soft harmonics
+      sample = Math.sin(2 * Math.PI * frequency * t) * 0.6;
+      sample += Math.sin(2 * Math.PI * frequency * 2 * t) * 0.25;
+      sample += Math.sin(2 * Math.PI * frequency * 3 * t) * 0.1; // Softer third harmonic
+    } else {
+      // Death - very soft, low sound
+      sample = Math.sin(2 * Math.PI * frequency * t) * 0.8;
+      sample += Math.sin(2 * Math.PI * frequency * 0.5 * t) * 0.2; // Gentle subharmonic
+    }
+
+    data[i] = sample * envelope * 0.15; // Much lower volume for gentleness
   }
 
   return buffer;
 }
 
-// Generate a more complex sound (e.g., for level up)
+// Generate a pleasant level-up sound with ascending notes
 function generateLevelUpSound(audioContext: AudioContext): AudioBuffer {
   const sampleRate = audioContext.sampleRate;
-  const duration = 0.5;
+  const duration = 0.6;
   const numSamples = Math.floor(sampleRate * duration);
   const buffer = audioContext.createBuffer(1, numSamples, sampleRate);
   const data = buffer.getChannelData(0);
 
+  // Musical notes: C, E, G (major triad)
+  const notes = [261.63, 329.63, 392.0]; // C4, E4, G4
+  const noteDuration = duration / notes.length;
+
   for (let i = 0; i < numSamples; i++) {
     const t = i / sampleRate;
-    const envelope = Math.min(1, t * 20) * Math.min(1, (duration - t) * 10);
-    // Ascending tone
-    const frequency = 200 + (t / duration) * 400;
-    data[i] = Math.sin(2 * Math.PI * frequency * t) * envelope * 0.3;
+    const noteIndex = Math.floor(t / noteDuration);
+    const noteTime = t - noteIndex * noteDuration;
+
+    if (noteIndex < notes.length) {
+      const frequency = notes[noteIndex];
+
+      // Very smooth, gentle envelope for each note
+      const attackTime = 0.08;
+      const releaseTime = 0.12;
+      let envelope = 1;
+
+      if (noteTime < attackTime) {
+        envelope = Math.sin(((noteTime / attackTime) * Math.PI) / 2); // Smooth sine attack
+      } else if (noteTime > noteDuration - releaseTime) {
+        const releaseProgress = (noteDuration - noteTime) / releaseTime;
+        envelope = Math.sin((releaseProgress * Math.PI) / 2); // Smooth sine release
+      }
+
+      // Softer harmonics for gentler sound
+      let sample = Math.sin(2 * Math.PI * frequency * noteTime) * 0.6;
+      sample += Math.sin(2 * Math.PI * frequency * 2 * noteTime) * 0.25;
+      sample += Math.sin(2 * Math.PI * frequency * 3 * noteTime) * 0.1; // Reduced third harmonic
+
+      data[i] = sample * envelope * 0.2; // Lower volume
+    } else {
+      data[i] = 0;
+    }
   }
 
   return buffer;
@@ -62,15 +141,40 @@ export async function loadSounds(): Promise<SoundManager> {
   // Create audio context
   const audioContext = createAudioContext();
 
-  // Generate sound buffers
-  const enemyHitSound = generateBeepSound(audioContext, 300, 0.1);
-  const enemyDeathSound = generateBeepSound(audioContext, 200, 0.2);
-  const playerHitSound = generateBeepSound(audioContext, 150, 0.3);
-  const xpCollectSound = generateBeepSound(audioContext, 600, 0.15);
+  // Generate gentle, soft sound buffers with pleasant frequencies
+  const enemyHitSound = generatePleasantSound(audioContext, 392, 0.1, "hit"); // G4 - softer, lower
+  const enemyDeathSound = generatePleasantSound(
+    audioContext,
+    196,
+    0.3,
+    "death"
+  ); // G3 - very low, gentle
+  const playerHitSound = generatePleasantSound(audioContext, 294, 0.25, "hit"); // D4 - softer warning
+  const xpCollectSound = generatePleasantSound(
+    audioContext,
+    440,
+    0.15,
+    "collect"
+  ); // A4 - pleasant chime
   const levelUpSound = generateLevelUpSound(audioContext);
-  const projectileFireSound = generateBeepSound(audioContext, 400, 0.05);
-  const aoeActivateSound = generateBeepSound(audioContext, 100, 0.4);
-  const healthCollectSound = generateBeepSound(audioContext, 500, 0.2);
+  const projectileFireSound = generatePleasantSound(
+    audioContext,
+    330,
+    0.06,
+    "fire"
+  ); // E4 - softer snap
+  const aoeActivateSound = generatePleasantSound(
+    audioContext,
+    165,
+    0.35,
+    "death"
+  ); // E3 - very low, gentle
+  const healthCollectSound = generatePleasantSound(
+    audioContext,
+    523.25,
+    0.18,
+    "collect"
+  ); // C5 - gentle healing chime
 
   // Volume controls
   let sfxVolume = 0.5;
@@ -80,7 +184,7 @@ export async function loadSounds(): Promise<SoundManager> {
     if (audioContext.state === "suspended") {
       try {
         await audioContext.resume();
-      } catch (e) {
+      } catch (_e) {
         // Silently fail
       }
     }

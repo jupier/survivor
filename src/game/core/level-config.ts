@@ -46,8 +46,8 @@ export const GAME_CONFIG = {
   PLAYER_START_PROJECTILE_COUNT: 1,
   PLAYER_START_TARGETING_ZONE_RADIUS: 110, // Slightly larger starting range (was 100)
   PLAYER_START_XP_ATTRACT_RADIUS: 0,
-  PLAYER_START_HEALTH: 3, // More starting health (was 2)
-  PLAYER_START_MAX_HEALTH: 3, // More starting health (was 2)
+  PLAYER_START_HEALTH: 2,
+  PLAYER_START_MAX_HEALTH: 2,
   PLAYER_START_ENEMY_SPAWN_INTERVAL: 1.5, // Slower initial spawn rate (was 1.0)
 
   // Weapon Starting Stats
