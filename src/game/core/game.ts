@@ -36,7 +36,6 @@ import {
   hideAdminMenu,
   updateAllButtonTexts,
 } from "../menu/admin-menu-manager";
-import { hideHomeScreen } from "../menu/home-screen";
 
 // All constants moved to GAME_CONFIG in level-config.ts
 
@@ -285,9 +284,6 @@ export class Game {
 
   public startGame(): void {
     console.log("startGame() called");
-    // Hide home screen
-    hideHomeScreen(this.k);
-
     // Show UI and player
     showUI(this.ui);
     this.player.opacity = 1;

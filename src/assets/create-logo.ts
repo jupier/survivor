@@ -4,7 +4,7 @@
 export function createLogo(): string {
   const canvas = document.createElement("canvas");
   // Create a larger canvas for the logo (suitable for display)
-  canvas.width = 512;
+  canvas.width = 550;
   canvas.height = 256;
   const ctx = canvas.getContext("2d")!;
 
@@ -17,12 +17,12 @@ export function createLogo(): string {
   gradient.addColorStop(0.5, "#16213e");
   gradient.addColorStop(1, "#0f3460");
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 512, 256);
+  ctx.fillRect(0, 0, 550, 256);
 
   // Add some subtle texture/dots in background
   ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
   for (let i = 0; i < 100; i++) {
-    const x = Math.random() * 512;
+    const x = Math.random() * 550;
     const y = Math.random() * 256;
     ctx.beginPath();
     ctx.arc(x, y, 2, 0, Math.PI * 2);
@@ -41,17 +41,20 @@ export function createLogo(): string {
   ctx.shadowOffsetY = 4;
 
   // Main text gradient (red to orange, menacing)
-  const textGradient = ctx.createLinearGradient(100, 100, 412, 156);
+  // Center text properly: canvas width is 550, so center is 275
+  const centerX = 275;
+  const centerY = 128;
+  const textGradient = ctx.createLinearGradient(100, 100, 450, 156);
   textGradient.addColorStop(0, "#ef4444"); // Red
   textGradient.addColorStop(0.5, "#f97316"); // Orange
   textGradient.addColorStop(1, "#dc2626"); // Dark red
   ctx.fillStyle = textGradient;
-  ctx.fillText("MINI SURVIVOR", 256, 128);
+  ctx.fillText("MINI SURVIVOR", centerX, centerY);
 
   // Add outline/stroke for emphasis
-  ctx.strokeStyle = "#000000";
-  ctx.lineWidth = 4;
-  ctx.strokeText("MINI SURVIVOR", 256, 128);
+  //ctx.strokeStyle = "#000000";
+  //ctx.lineWidth = 4;
+  //ctx.strokeText("MINI SURVIVOR", 256, 128);
 
   // Reset shadow
   ctx.shadowColor = "transparent";
@@ -59,51 +62,22 @@ export function createLogo(): string {
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
 
-  // Add decorative elements - monster eyes on sides
-  // Left eye
-  ctx.fillStyle = "#ef4444"; // Red
-  ctx.beginPath();
-  ctx.arc(80, 128, 20, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#000000";
-  ctx.beginPath();
-  ctx.arc(80, 128, 12, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#ffffff";
-  ctx.beginPath();
-  ctx.arc(75, 123, 4, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Right eye
-  ctx.fillStyle = "#ef4444"; // Red
-  ctx.beginPath();
-  ctx.arc(432, 128, 20, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#000000";
-  ctx.beginPath();
-  ctx.arc(432, 128, 12, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#ffffff";
-  ctx.beginPath();
-  ctx.arc(427, 123, 4, 0, Math.PI * 2);
-  ctx.fill();
-
   // Add some particle effects or sparks around the text
   ctx.fillStyle = "#fbbf24"; // Gold/yellow
   for (let i = 0; i < 20; i++) {
     const angle = (Math.PI * 2 * i) / 20;
     const radius = 180;
-    const x = 256 + Math.cos(angle) * radius;
-    const y = 128 + Math.sin(angle) * radius;
+    const x = centerX + Math.cos(angle) * radius;
+    const y = centerY + Math.sin(angle) * radius;
     ctx.beginPath();
     ctx.arc(x, y, 3, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Add a subtle border/frame
-  ctx.strokeStyle = "rgba(255, 200, 0, 0.3)";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(10, 10, 492, 236);
+  // Add a more prominent yellow border/frame
+  ctx.strokeStyle = "rgba(255, 215, 0, 0.8)"; // More visible gold/yellow
+  ctx.lineWidth = 6; // Thicker border
+  ctx.strokeRect(5, 5, 540, 246); // Closer to edges with thicker border
 
   return canvas.toDataURL();
 }

@@ -6,18 +6,13 @@ export interface HomeScreenCallbacks {
   onStart: () => void;
 }
 
-let homeScreenCallbacks: HomeScreenCallbacks | null = null;
-let homeScreenElements: any[] = [];
-
 export async function showHomeScreen(
   k: ReturnType<typeof import("kaplay").default>,
   callbacks: HomeScreenCallbacks
 ): Promise<void> {
-  homeScreenCallbacks = callbacks;
   console.log("showHomeScreen called with callbacks:", callbacks);
 
-  // Clear any existing home screen elements
-  hideHomeScreen(k);
+  // Note: No cleanup needed - scenes handle element destruction automatically
 
   // Create background overlay (no area so it doesn't block clicks)
   const overlay = k.add([
@@ -31,7 +26,6 @@ export async function showHomeScreen(
     "homeScreen",
     // No k.area() - overlay should not block clicks
   ]);
-  homeScreenElements.push(overlay);
 
   const centerX = k.width() / 2;
   let currentY = k.height() / 2 - 200;
@@ -48,7 +42,6 @@ export async function showHomeScreen(
     k.scale(0.6), // Scale down the logo to fit better
     "homeScreen",
   ]);
-  homeScreenElements.push(logo);
   currentY += 180;
 
   // Game name (if you want to show it separately, or use logo text)
@@ -61,7 +54,6 @@ export async function showHomeScreen(
     k.z(Z_INDEX.HOME_SCREEN_TEXT),
     "homeScreen",
   ]);
-  homeScreenElements.push(gameName);
   currentY += 50;
 
   // Version
@@ -74,7 +66,6 @@ export async function showHomeScreen(
     k.z(Z_INDEX.HOME_SCREEN_TEXT),
     "homeScreen",
   ]);
-  homeScreenElements.push(versionText);
   currentY += 80;
 
   // Start button
@@ -95,7 +86,6 @@ export async function showHomeScreen(
     "homeScreen",
     "startButton",
   ]);
-  homeScreenElements.push(buttonBg);
 
   // Button text (above button bg but no area so clicks go through to button)
   const buttonText = k.add([
@@ -108,7 +98,6 @@ export async function showHomeScreen(
     "homeScreen",
     // No k.area() so clicks pass through to button
   ]);
-  homeScreenElements.push(buttonText);
 
   // Button hover effect
   buttonBg.onHover(() => {
@@ -134,8 +123,7 @@ export async function showHomeScreen(
     isStarting = true;
 
     console.log("handleStart called");
-    const callback =
-      (buttonBg as any).startCallback || homeScreenCallbacks?.onStart;
+    const callback = (buttonBg as any).startCallback || callbacks.onStart;
     if (callback) {
       console.log("Calling start callback");
       callback();
@@ -152,47 +140,10 @@ export async function showHomeScreen(
   });
 
   // Also allow Enter key to start
-  const enterKeyHandler = k.onKeyPress("enter", () => {
+  k.onKeyPress("enter", () => {
     console.log("Enter key pressed");
     handleStart();
   });
-  homeScreenElements.push({ cancel: enterKeyHandler.cancel } as any);
 
   console.log("Home screen setup complete");
-}
-
-export function hideHomeScreen(
-  _k: ReturnType<typeof import("kaplay").default>
-): void {
-  // Remove all home screen elements
-  homeScreenElements.forEach((element) => {
-    if (element) {
-      // Check if it's a cancel handler (object with cancel method)
-      if (
-        typeof element === "object" &&
-        "cancel" in element &&
-        typeof element.cancel === "function"
-      ) {
-        element.cancel();
-      }
-      // Check if it's a game object with destroy method
-      else if (typeof element.destroy === "function") {
-        // Check if it's already destroyed (only if isDestroyed exists)
-        if (typeof element.isDestroyed === "function") {
-          if (!element.isDestroyed()) {
-            element.destroy();
-          }
-        } else {
-          // If isDestroyed doesn't exist, just try to destroy
-          try {
-            element.destroy();
-          } catch (_e) {
-            // Ignore errors if already destroyed
-          }
-        }
-      }
-    }
-  });
-  homeScreenElements = [];
-  homeScreenCallbacks = null;
 }
