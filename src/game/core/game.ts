@@ -283,7 +283,6 @@ export class Game {
   }
 
   public startGame(): void {
-    console.log("startGame() called");
     // Show UI and player
     showUI(this.ui);
     this.player.opacity = 1;
@@ -291,12 +290,6 @@ export class Game {
     // Start the game
     this.gameStarted = true;
     this.state.isPaused = false;
-    console.log(
-      "Game started, gameStarted:",
-      this.gameStarted,
-      "isPaused:",
-      this.state.isPaused
-    );
   }
 
   // Unused test function - kept for potential future testing
@@ -1593,7 +1586,7 @@ export class Game {
         if (this.fireLoopController) {
           try {
             this.fireLoopController.cancel();
-          } catch (e) {
+          } catch (_e) {
             // Controller might already be cancelled
           }
         }

@@ -10,12 +10,10 @@ export async function showHomeScreen(
   k: ReturnType<typeof import("kaplay").default>,
   callbacks: HomeScreenCallbacks
 ): Promise<void> {
-  console.log("showHomeScreen called with callbacks:", callbacks);
-
   // Note: No cleanup needed - scenes handle element destruction automatically
 
   // Create background overlay (no area so it doesn't block clicks)
-  const overlay = k.add([
+  k.add([
     k.rect(k.width(), k.height()),
     k.color(0, 0, 0),
     k.opacity(0.9),
@@ -33,7 +31,7 @@ export async function showHomeScreen(
   // Load and display logo
   const logoDataUrl = createLogo();
   await k.loadSprite("home-logo", logoDataUrl);
-  const logo = k.add([
+  k.add([
     k.sprite("home-logo"),
     k.pos(centerX, currentY),
     k.anchor("center"),
@@ -45,7 +43,7 @@ export async function showHomeScreen(
   currentY += 180;
 
   // Game name (if you want to show it separately, or use logo text)
-  const gameName = k.add([
+  k.add([
     k.text("Mini Survivor", { size: 36 }),
     k.color(255, 215, 0), // Gold color
     k.pos(centerX, currentY),
@@ -57,7 +55,7 @@ export async function showHomeScreen(
   currentY += 50;
 
   // Version
-  const versionText = k.add([
+  k.add([
     k.text(`v${VERSION}`, { size: 18 }),
     k.color(200, 200, 200), // Light gray
     k.pos(centerX, currentY),
@@ -88,7 +86,7 @@ export async function showHomeScreen(
   ]);
 
   // Button text (above button bg but no area so clicks go through to button)
-  const buttonText = k.add([
+  k.add([
     k.text("Start Game", { size: 24 }),
     k.color(255, 255, 255),
     k.pos(centerX, buttonY + buttonHeight / 2),
@@ -122,28 +120,21 @@ export async function showHomeScreen(
     }
     isStarting = true;
 
-    console.log("handleStart called");
     const callback = (buttonBg as any).startCallback || callbacks.onStart;
     if (callback) {
-      console.log("Calling start callback");
       callback();
     } else {
-      console.log("No callback available!");
       isStarting = false; // Reset if callback not available
     }
   };
 
   // Use onClick on the button (primary handler)
   buttonBg.onClick(() => {
-    console.log("Button onClick triggered");
     handleStart();
   });
 
   // Also allow Enter key to start
   k.onKeyPress("enter", () => {
-    console.log("Enter key pressed");
     handleStart();
   });
-
-  console.log("Home screen setup complete");
 }
