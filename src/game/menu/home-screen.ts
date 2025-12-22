@@ -122,8 +122,17 @@ export async function showHomeScreen(
   // Store callback directly on button for easier access
   (buttonBg as any).startCallback = callbacks.onStart;
 
+  // Flag to prevent multiple calls
+  let isStarting = false;
+
   // Button click handler - use the stored callback directly
   const handleStart = () => {
+    // Prevent multiple calls
+    if (isStarting) {
+      return;
+    }
+    isStarting = true;
+
     console.log("handleStart called");
     const callback =
       (buttonBg as any).startCallback || homeScreenCallbacks?.onStart;
@@ -132,42 +141,17 @@ export async function showHomeScreen(
       callback();
     } else {
       console.log("No callback available!");
+      isStarting = false; // Reset if callback not available
     }
   };
 
-  // Use onClick on the button
+  // Use onClick on the button (primary handler)
   buttonBg.onClick(() => {
     console.log("Button onClick triggered");
     handleStart();
   });
 
-  // Also try onMouseRelease
-  buttonBg.onMouseRelease(() => {
-    console.log("Button onMouseRelease triggered");
-    handleStart();
-  });
-
-  // Also try global mouse click handler as fallback
-  const mouseClickHandler = k.onMousePress(() => {
-    const mousePos = k.mousePos();
-    // Check if click is within button bounds (account for fixed positioning)
-    const fixedMouseX = mousePos.x;
-    const fixedMouseY = mousePos.y;
-    if (
-      fixedMouseX >= buttonX &&
-      fixedMouseX <= buttonX + buttonWidth &&
-      fixedMouseY >= buttonY &&
-      fixedMouseY <= buttonY + buttonHeight
-    ) {
-      console.log("Global mouse click detected on button");
-      handleStart();
-      // Remove this handler after first click
-      mouseClickHandler.cancel();
-    }
-  });
-  homeScreenElements.push({ cancel: mouseClickHandler.cancel } as any);
-
-  // Also allow Enter key to start - use a unique handler
+  // Also allow Enter key to start
   const enterKeyHandler = k.onKeyPress("enter", () => {
     console.log("Enter key pressed");
     handleStart();
@@ -202,7 +186,7 @@ export function hideHomeScreen(
           // If isDestroyed doesn't exist, just try to destroy
           try {
             element.destroy();
-          } catch (e) {
+          } catch (_e) {
             // Ignore errors if already destroyed
           }
         }

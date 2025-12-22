@@ -102,15 +102,16 @@ export function fireProjectile(
 
   // Handle collision with enemies
   projectile.onCollide("enemy", (enemy: any) => {
-    // Skip if projectile is already destroyed or we've already hit this enemy
+    // Skip if projectile is already destroyed, doesn't exist, or we've already hit this enemy
     if (
       (projectile as any).isDestroyed ||
-      (projectile as any).hitEnemies.has(enemy)
+      (projectile as any).hitEnemies.has(enemy) ||
+      !projectile.exists()
     ) {
       return;
     }
 
-    // Mark projectile as destroyed to stop updates
+    // Mark projectile as destroyed immediately to prevent multiple collisions and stop updates
     (projectile as any).isDestroyed = true;
 
     // Mark this enemy as hit
@@ -119,7 +120,7 @@ export function fireProjectile(
     // Call the callback to handle enemy hit
     onEnemyHit(enemy);
 
-    // Destroy projectile on hit (no bounces)
+    // Destroy projectile immediately on hit (no bounces)
     projectile.destroy();
   });
 
