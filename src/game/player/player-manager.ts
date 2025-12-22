@@ -21,6 +21,22 @@ export function createPlayer(k: ReturnType<typeof import("kaplay").default>): {
   // Start with idle animation facing down
   player.play("idle-down");
 
+  // Create Christmas hat overlay that follows the player
+  const christmasHat = k.add([
+    k.sprite("christmas-hat"),
+    k.pos(k.width() / 2, k.height() / 2 - 8), // Position slightly above player head
+    k.anchor("center"),
+    k.scale(0.75, 0.75), // Match player scale
+    k.z(Z_INDEX.PLAYER + 1), // Render above player
+    "christmasHat",
+  ]);
+
+  // Update hat position to follow player
+  player.onUpdate(() => {
+    christmasHat.pos.x = player.pos.x;
+    christmasHat.pos.y = player.pos.y - 8; // Keep hat above player head
+  });
+
   // Create collision zone indicator for player (circle outline) - shiny orange
   const playerSize = 24; // Approximate player sprite size (scaled down from 32)
   const collisionRadius = playerSize / 2;

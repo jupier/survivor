@@ -22,6 +22,8 @@ import {
   createInvincibilityPowerUpSprite,
   createDamagePowerUpSprite,
 } from "../../assets/create-powerup-sprites";
+import { createChristmasHatSprite } from "../../assets/create-christmas-hat-sprite";
+import { createOrnamentSprite } from "../../assets/create-christmas-decoration-sprite";
 
 export async function loadAllSprites(
   k: ReturnType<typeof import("kaplay").default>
@@ -101,6 +103,14 @@ export async function loadAllSprites(
 
   const damagePowerUpSpriteUrl = createDamagePowerUpSprite();
   await k.loadSprite("powerup-damage", damagePowerUpSpriteUrl);
+
+  // Load Christmas hat sprite
+  const christmasHatSpriteUrl = createChristmasHatSprite();
+  await k.loadSprite("christmas-hat", christmasHatSpriteUrl);
+
+  // Load Christmas decoration sprites
+  const ornamentSpriteUrl = createOrnamentSprite();
+  await k.loadSprite("ornament", ornamentSpriteUrl);
 }
 
 export function createBackground(
@@ -136,8 +146,46 @@ export function createBackground(
         ]);
       }
     }
+
+    // Add Christmas decorations to background
+    addChristmasDecorations(k);
   });
 
   // Background color is handled by the background tiles, not the canvas background
   // The canvas background stays as set during kaplay initialization
+}
+
+function addChristmasDecorations(
+  k: ReturnType<typeof import("kaplay").default>
+): void {
+  // Remove existing decorations
+  const existingDecorations = k.get("christmasDecoration");
+  for (const dec of existingDecorations) {
+    dec.destroy();
+  }
+
+  // Add ornaments scattered around
+  const numOrnaments = 8;
+  for (let i = 0; i < numOrnaments; i++) {
+    const startAngle = Math.random() * Math.PI * 2;
+    const swingSpeed = 0.5 + Math.random() * 0.5;
+    const swingAmount = 0.1;
+
+    const ornament = k.add([
+      k.sprite("ornament"),
+      k.pos(Math.random() * k.width(), Math.random() * k.height()),
+      k.anchor("center"),
+      k.z(Z_INDEX.BACKGROUND + 1),
+      k.opacity(0.7),
+      k.scale(0.8 + Math.random() * 0.4),
+      k.rotate(startAngle),
+      "christmasDecoration",
+    ]);
+
+    // Animate ornament gently swinging
+    ornament.onUpdate(() => {
+      const time = k.time();
+      ornament.angle = startAngle + Math.sin(time * swingSpeed) * swingAmount;
+    });
+  }
 }

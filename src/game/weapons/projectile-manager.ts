@@ -102,10 +102,16 @@ export function fireProjectile(
 
   // Handle collision with enemies
   projectile.onCollide("enemy", (enemy: any) => {
-    // Skip if we've already hit this enemy (prevents multiple hits)
-    if ((projectile as any).hitEnemies.has(enemy)) {
+    // Skip if projectile is already destroyed or we've already hit this enemy
+    if (
+      (projectile as any).isDestroyed ||
+      (projectile as any).hitEnemies.has(enemy)
+    ) {
       return;
     }
+
+    // Mark projectile as destroyed to stop updates
+    (projectile as any).isDestroyed = true;
 
     // Mark this enemy as hit
     (projectile as any).hitEnemies.add(enemy);
@@ -117,10 +123,13 @@ export function fireProjectile(
     projectile.destroy();
   });
 
+  // Track if projectile is destroyed to prevent updates after destruction
+  (projectile as any).isDestroyed = false;
+
   // Move projectile in the direction it's traveling
   projectile.onUpdate(() => {
-    // Don't update if game is paused
-    if (isPaused()) {
+    // Don't update if projectile is destroyed or game is paused
+    if ((projectile as any).isDestroyed || isPaused()) {
       return;
     }
 
@@ -141,6 +150,7 @@ export function fireProjectile(
       projectile.pos.y < -projectileSize ||
       projectile.pos.y > screenHeight + projectileSize
     ) {
+      (projectile as any).isDestroyed = true;
       projectile.destroy();
     }
   });
